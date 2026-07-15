@@ -134,15 +134,15 @@ export default function TasksPage() {
   })
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto p-5 space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">All Tasks</h1>
-              <p className="text-sm text-gray-500">{tasks.filter(t => t.status === 'Completed').length}/{tasks.length} completed</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">All Tasks</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{tasks.filter(t => t.status === 'Completed').length}/{tasks.length} completed</p>
             </div>
             <Button onClick={() => { setEditTask(null); setShowForm(true) }}>
               <Plus className="w-4 h-4" /> Add Task
@@ -187,15 +187,15 @@ export default function TasksPage() {
                     <CardContent className="p-3 flex items-center gap-3">
                       <span className={`w-2 h-2 rounded-full shrink-0 ${task.status === 'Completed' ? 'bg-green-500' : task.status === 'In Progress' ? 'bg-blue-500' : task.status === 'Blocked' ? 'bg-red-500' : 'bg-gray-300'}`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{task.title}</p>
                         <div className="flex items-center gap-2 mt-0.5">
                           {event && <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: event.color + '20', color: event.color }}>{event.name}</span>}
-                          {task.category && <span className="text-xs text-gray-400">{task.category}</span>}
+                          {task.category && <span className="text-xs text-gray-400 dark:text-gray-500">{task.category}</span>}
                         </div>
                       </div>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${getPriorityColor(task.priority)}`}>{task.priority}</span>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getStatusColor(task.status)}`}>{task.status}</span>
-                      {task.due_date && <span className="text-xs text-gray-400">{formatDate(task.due_date)}</span>}
+                      {task.due_date && <span className="text-xs text-gray-400 dark:text-gray-500">{formatDate(task.due_date)}</span>}
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100">
                         <button onClick={() => { setEditTask(task); setShowForm(true) }} className="p-1 text-gray-400 hover:text-gray-600"><Edit2 className="w-3.5 h-3.5" /></button>
                         <button onClick={() => deleteTask(task.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>

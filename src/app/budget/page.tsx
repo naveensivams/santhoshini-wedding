@@ -94,18 +94,33 @@ function BudgetForm({ entry, onClose, onSaved }: { entry?: BudgetEntry | null; o
   )
 }
 
+const BUDGET_TOTAL_KEY = 'wedding_total_budget'
+
 export default function BudgetPage() {
   const [entries, setEntries] = useState<BudgetEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editEntry, setEditEntry] = useState<BudgetEntry | null>(null)
+  const [totalBudgetInput, setTotalBudgetInput] = useState('')
+  const [savedTotal, setSavedTotal] = useState(0)
 
-  function load() { setEntries(ls()); setLoading(false) }
+  function load() {
+    setEntries(ls())
+    const saved = parseFloat(localStorage.getItem(BUDGET_TOTAL_KEY)||'0')
+    setSavedTotal(saved)
+    setTotalBudgetInput(saved > 0 ? String(saved) : '')
+    setLoading(false)
+  }
   function deleteEntry(id: string) { ss(ls().filter(e => e.id!==id)); load() }
+  function saveTotalBudget() {
+    const val = parseFloat(totalBudgetInput) || 0
+    localStorage.setItem(BUDGET_TOTAL_KEY, String(val))
+    setSavedTotal(val)
+  }
 
   useEffect(() => { load() }, [])
 
-  const totalBudget = entries.filter(e => e.type === 'Budget').reduce((s, e) => s + e.amount, 0)
+  const totalBudget = savedTotal || entries.filter(e => e.type === 'Budget').reduce((s, e) => s + e.amount, 0)
   const spent = entries.filter(e => e.type === 'Expense' || e.type === 'Advance').reduce((s, e) => s + e.amount, 0)
   const remaining = totalBudget - spent
 
@@ -131,12 +146,27 @@ export default function BudgetPage() {
         <main className="flex-1 overflow-y-auto p-5 space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Budget</h1>
-              <p className="text-sm text-gray-500">Every rupee planned, spent and remaining — across all events.</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Budget</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Every rupee planned, spent and remaining — across all events.</p>
             </div>
             <Button onClick={() => { setEditEntry(null); setShowForm(true) }}>
               <Plus className="w-4 h-4" /> Add Entry
             </Button>
+          </div>
+
+          {/* Total Budget Setter */}
+          <div className="flex items-center gap-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-3">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Set Total Wedding Budget (₹)</span>
+            <Input
+              type="number"
+              className="w-40 h-8 text-sm"
+              placeholder="e.g. 500000"
+              value={totalBudgetInput}
+              onChange={e => setTotalBudgetInput(e.target.value)}
+              onBlur={saveTotalBudget}
+              onKeyDown={e => e.key === 'Enter' && saveTotalBudget()}
+            />
+            <span className="text-xs text-gray-400 dark:text-gray-500">Press Enter or click away to save</span>
           </div>
 
           {/* Summary */}
@@ -148,7 +178,7 @@ export default function BudgetPage() {
             ].map(({ label, value, color }) => (
               <Card key={label}>
                 <CardContent className="p-5">
-                  <p className="text-sm text-gray-500 mb-1">{label}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{label}</p>
                   <p className={`text-2xl font-bold ${color}`}>{value}</p>
                   {totalBudget > 0 && label === 'Spent so far' && (
                     <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">

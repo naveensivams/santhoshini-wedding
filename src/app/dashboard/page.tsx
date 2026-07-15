@@ -8,7 +8,6 @@ import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { EVENTS, WEDDING_DATE, PLANNING_START_DATE, ADMIN_NAME } from '@/lib/constants'
 import { getCountdown, getPlanningProgress, formatCurrency, formatDate } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -77,61 +76,28 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    async function load() {
+    function load() {
       try {
-        const supabase = createClient()
-        const [tasksRes, bookingsRes, shoppingRes, budgetRes] = await Promise.all([
-          supabase.from('tasks').select('status, event_id'),
-          supabase.from('bookings').select('status, category, event_id'),
-          supabase.from('shopping_items').select('status'),
-          supabase.from('budget_entries').select('amount, type'),
-        ])
-
-        const tasks = tasksRes.data || []
-        const bookings = bookingsRes.data || []
-        const shopping = shoppingRes.data || []
-        const budget = budgetRes.data || []
-
+        const tasks = JSON.parse(localStorage.getItem('wedding_tasks')||'[]')
+        const bookings = JSON.parse(localStorage.getItem('wedding_bookings')||'[]')
+        const shopping = JSON.parse(localStorage.getItem('wedding_shopping')||'[]')
+        const budget = JSON.parse(localStorage.getItem('wedding_budget')||'[]')
         const daysLeft = countdown.days
-        const { getBookingUrgency } = await import('@/lib/utils')
-
+        const { getBookingUrgency } = require('@/lib/utils')
         const overdue = bookings
-          .filter(b => b.status === 'Not Booked' || b.status === 'Enquired')
-          .filter(b => {
-            const urgency = getBookingUrgency(b.category, daysLeft)
-            return urgency === 'Critical' || urgency === 'Overdue'
-          })
-          .map(b => b.category)
-          .slice(0, 3)
-
+          .filter((b: {status:string}) => b.status === 'Not Booked' || b.status === 'Enquired')
+          .filter((b: {category:string}) => { const u = getBookingUrgency(b.category, daysLeft); return u === 'Critical' || u === 'Overdue' })
+          .map((b: {category:string}) => b.category).slice(0, 3)
         const estats: Record<string, { done: number; total: number }> = {}
         EVENTS.forEach(e => { estats[e.id] = { done: 0, total: 0 } })
-        tasks.forEach(t => {
-          if (t.event_id && estats[t.event_id]) {
-            estats[t.event_id].total++
-            if (t.status === 'Completed') estats[t.event_id].done++
-          }
+        tasks.forEach((t: {event_id?:string;status:string}) => {
+          if (t.event_id && estats[t.event_id]) { estats[t.event_id].total++; if (t.status === 'Completed') estats[t.event_id].done++ }
         })
-
-        const totalBudget = budget.filter(b => b.type === 'Budget').reduce((s, b) => s + (b.amount || 0), 0)
-        const spentBudget = budget.filter(b => b.type === 'Expense' || b.type === 'Advance').reduce((s, b) => s + (b.amount || 0), 0)
-
-        setStats({
-          totalTasks: tasks.length,
-          completedTasks: tasks.filter(t => t.status === 'Completed').length,
-          totalBookings: bookings.length,
-          confirmedBookings: bookings.filter(b => b.status === 'Confirmed' || b.status === 'Booked').length,
-          totalShopping: shopping.length,
-          purchasedShopping: shopping.filter(s => s.status === 'Purchased').length,
-          totalBudget,
-          spentBudget,
-        })
-        setOverdueBookings(overdue)
-        setEventStats(estats)
-      } catch {
-      } finally {
-        setLoading(false)
-      }
+        const totalBudget = budget.filter((b: {type:string}) => b.type === 'Budget').reduce((s: number, b: {amount:number}) => s + (b.amount||0), 0)
+        const spentBudget = budget.filter((b: {type:string}) => b.type === 'Expense' || b.type === 'Advance').reduce((s: number, b: {amount:number}) => s + (b.amount||0), 0)
+        setStats({ totalTasks: tasks.length, completedTasks: tasks.filter((t: {status:string}) => t.status === 'Completed').length, totalBookings: bookings.length, confirmedBookings: bookings.filter((b: {status:string}) => b.status === 'Confirmed' || b.status === 'Booked').length, totalShopping: shopping.length, purchasedShopping: shopping.filter((s: {status:string}) => s.status === 'Purchased').length, totalBudget, spentBudget })
+        setOverdueBookings(overdue); setEventStats(estats)
+      } finally { setLoading(false) }
     }
     load()
   }, [countdown.days])
@@ -216,10 +182,10 @@ export default function DashboardPage() {
           <Card key={label} className="card-hover">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-500">{label}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
                 <Icon className={`w-4 h-4 ${color}`} />
               </div>
-              <div className="text-xl font-bold text-gray-900 mb-2">{value}</div>
+              <div className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">{value}</div>
               <Progress value={pct} className="h-1" indicatorClassName="bg-emerald-500" />
             </CardContent>
           </Card>
@@ -247,7 +213,7 @@ export default function DashboardPage() {
       {/* Events Grid */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-gray-900">Events</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Events</h2>
           <Link href="/events/manage" className="text-xs text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-1">
             Manage <ChevronRight className="w-3 h-3" />
           </Link>
@@ -269,8 +235,8 @@ export default function DashboardPage() {
                         {event.icon}
                       </span>
                       <div className="min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm truncate">{event.name}</p>
-                        <p className="text-xs text-gray-400">{formatDate(event.date)}{event.time ? ` · ${event.time}` : ''}</p>
+                        <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate">{event.name}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(event.date)}{event.time ? ` · ${event.time}` : ''}</p>
                       </div>
                       <span className="ml-auto text-sm font-bold" style={{ color: event.color }}>{pct}%</span>
                     </div>
@@ -291,7 +257,7 @@ export default function DashboardPage() {
                         transition={{ duration: 1, ease: 'easeOut' }}
                       />
                     </div>
-                    <p className="text-xs text-gray-400 mt-2">{es.done}/{es.total} tasks · {event.venue || 'Venue TBD'}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">{es.done}/{es.total} tasks · {event.venue || 'Venue TBD'}</p>
                   </CardContent>
                 </Card>
               </Link>
