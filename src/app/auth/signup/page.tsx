@@ -1,15 +1,13 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Gem, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { createClient } from '@/lib/supabase/client'
+import { signup } from '@/app/auth/actions'
 
 export default function SignupPage() {
-  const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -23,18 +21,9 @@ export default function SignupPage() {
     setError('')
     setLoading(true)
     try {
-      const supabase = createClient()
-      const { data, error: signupError } = await supabase.auth.signUp({
-        email, password,
-        options: { data: { name } },
-      })
-      if (signupError) { setError(signupError.message); return }
-      if (data.user && !data.session) {
-        setSuccess(true)
-      } else {
-        router.push('/dashboard')
-        router.refresh()
-      }
+      const result = await signup(email, password, name)
+      if (result?.error) { setError(result.error); return }
+      if (result?.success) setSuccess(true)
     } catch {
       setError('Something went wrong. Please try again.')
     } finally {
