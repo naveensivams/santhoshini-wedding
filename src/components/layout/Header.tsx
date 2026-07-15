@@ -1,13 +1,31 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Bell, Sun, Moon } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 
 export default function Header() {
   const [query, setQuery] = useState('')
+  const [dark, setDark] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('theme')
+    if (saved === 'dark') { setDark(true); document.documentElement.classList.add('dark') }
+  }, [])
+
+  function toggleTheme() {
+    const next = !dark
+    setDark(next)
+    if (next) {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+  }
 
   return (
-    <header className="h-12 border-b border-gray-100 bg-white flex items-center px-5 gap-4 shrink-0">
+    <header className="h-12 border-b border-gray-100 bg-white dark:bg-gray-900 dark:border-gray-800 flex items-center px-5 gap-4 shrink-0">
       <div className="flex-1 max-w-sm relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
         <Input
@@ -22,8 +40,12 @@ export default function Header() {
         <button className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
           <Bell className="w-4 h-4" />
         </button>
-        <button className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-          <Sun className="w-4 h-4" />
+        <button
+          onClick={toggleTheme}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+          title={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
         <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-semibold">
           N

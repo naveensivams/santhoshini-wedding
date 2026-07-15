@@ -38,7 +38,7 @@ export interface WeddingEvent {
 
 export interface Task {
   id: string
-  event_id: string
+  event_id?: string
   title: string
   description?: string
   category?: string

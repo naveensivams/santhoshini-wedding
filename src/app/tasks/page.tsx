@@ -12,8 +12,11 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { EVENTS, TASK_PRIORITIES, TASK_STATUSES, TASK_CATEGORIES } from '@/lib/constants'
 import { getPriorityColor, getStatusColor, formatDate } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 import type { Task } from '@/types'
+
+const STORAGE_KEY = 'wedding_tasks'
+function loadTasks(): Task[] { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] } }
+function saveTasks(tasks: Task[]) { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)) }
 
 function TaskForm({ task, onClose, onSaved }: { task?: Task | null; onClose: () => void; onSaved: () => void }) {
   const [title, setTitle] = useState(task?.title || '')
@@ -25,19 +28,18 @@ function TaskForm({ task, onClose, onSaved }: { task?: Task | null; onClose: () 
   const [eventId, setEventId] = useState(task?.event_id || '')
   const [saving, setSaving] = useState(false)
 
-  async function save() {
+  function save() {
     if (!title.trim()) return
     setSaving(true)
-    try {
-      const supabase = createClient()
-      const payload = { title: title.trim(), description, category, priority, status, due_date: dueDate || null, event_id: eventId || null, completion_percent: status === 'Completed' ? 100 : 0 }
-      if (task?.id) {
-        await supabase.from('tasks').update(payload).eq('id', task.id)
-      } else {
-        await supabase.from('tasks').insert(payload)
-      }
-      onSaved()
-    } finally { setSaving(false) }
+    const all = loadTasks()
+    const payload = { title: title.trim(), description, category, priority, status, due_date: dueDate || undefined, event_id: eventId || undefined, completion_percent: status === 'Completed' ? 100 : 0, created_at: new Date().toISOString() }
+    if (task?.id) {
+      saveTasks(all.map(t => t.id === task.id ? { ...t, ...payload } as Task : t))
+    } else {
+      saveTasks([{ ...payload, id: crypto.randomUUID() } as Task, ...all])
+    }
+    setSaving(false)
+    onSaved()
   }
 
   return (
@@ -112,17 +114,13 @@ export default function TasksPage() {
   const [filterStatus, setFilterStatus] = useState('')
   const [filterEvent, setFilterEvent] = useState('')
 
-  async function load() {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase.from('tasks').select('*').order('created_at', { ascending: false })
-      setTasks(data || [])
-    } finally { setLoading(false) }
+  function load() {
+    setTasks(loadTasks())
+    setLoading(false)
   }
 
-  async function deleteTask(id: string) {
-    const supabase = createClient()
-    await supabase.from('tasks').delete().eq('id', id)
+  function deleteTask(id: string) {
+    saveTasks(loadTasks().filter(t => t.id !== id))
     load()
   }
 
