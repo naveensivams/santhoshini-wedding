@@ -239,7 +239,7 @@ export default function BookingsPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { label: 'Booked', value: `${Math.round(bookings.length ? (confirmed / bookings.length) * 100 : 0)}%`, sub: `${confirmed} of ${bookings.length} bookings`, icon: CheckCircle, color: 'text-emerald-600' },
               { label: 'Confirmed', value: confirmed, sub: 'vendors confirmed', icon: CheckCircle, color: 'text-blue-600' },
@@ -270,7 +270,7 @@ export default function BookingsPage() {
                 <p className="text-sm">No bookings yet. Add your first vendor booking!</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {sorted.map(booking => (
                   <BookingCard
                     key={booking.id}

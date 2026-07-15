@@ -37,7 +37,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Summary row */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { label: 'Tasks Done', value: `${completedTasks}/${totalTasks}`, pct: totalTasks ? Math.round((completedTasks/totalTasks)*100) : 0, color: 'text-emerald-600' },
               { label: 'Budget Spent', value: `₹${spent.toLocaleString('en-IN')} / ₹${totalBudget.toLocaleString('en-IN')}`, pct: totalBudget ? Math.round((spent/totalBudget)*100) : 0, color: 'text-amber-600' },
@@ -56,7 +56,7 @@ export default function AnalyticsPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader><CardTitle>Tasks by event</CardTitle></CardHeader>
               <CardContent>

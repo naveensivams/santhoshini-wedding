@@ -3,13 +3,14 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
-import { EVENTS, WEDDING_DATE, APP_NAME } from '@/lib/constants'
+import { EVENTS, WEDDING_DATE } from '@/lib/constants'
 import { getCountdown } from '@/lib/utils'
+import { useSidebar } from './SidebarContext'
 import {
   LayoutDashboard, CheckSquare, Calendar, ShoppingCart,
   DollarSign, Users, Store, UserCheck, CalendarDays,
   BarChart3, Settings, Plus, ChevronDown, ChevronUp,
-  Gem, BookOpen, List
+  Gem, BookOpen, List, X
 } from 'lucide-react'
 
 const planningLinks = [
@@ -27,33 +28,35 @@ const planningLinks = [
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
-export default function Sidebar() {
+function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
   const [eventsOpen, setEventsOpen] = useState(true)
   const [days, setDays] = useState(0)
 
   useEffect(() => {
-    const update = () => {
-      const { days } = getCountdown(WEDDING_DATE)
-      setDays(days)
-    }
+    const update = () => { const { days } = getCountdown(WEDDING_DATE); setDays(days) }
     update()
     const interval = setInterval(update, 60000)
     return () => clearInterval(interval)
   }, [])
 
   return (
-    <aside className="w-60 shrink-0 h-screen bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex flex-col overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Logo */}
       <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center shrink-0">
             <Gem className="w-4 h-4 text-amber-300" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wide leading-tight truncate">Santhoshini&apos;s Wedding</p>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest">Planner</p>
           </div>
+          {onClose && (
+            <button onClick={onClose} className="md:hidden p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
         <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-lg px-3 py-1.5 text-center">
           <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{days}</span>
@@ -161,6 +164,27 @@ export default function Sidebar() {
           </div>
         </div>
       </div>
-    </aside>
+    </div>
+  )
+}
+
+export default function Sidebar() {
+  const { open, close } = useSidebar()
+  return (
+    <>
+      {/* Mobile overlay drawer */}
+      {open && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={close} />
+          <aside className="absolute left-0 top-0 h-full w-64 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 shadow-xl">
+            <SidebarContent onClose={close} />
+          </aside>
+        </div>
+      )}
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-60 shrink-0 h-screen bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 flex-col overflow-hidden">
+        <SidebarContent />
+      </aside>
+    </>
   )
 }

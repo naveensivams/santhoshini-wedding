@@ -143,7 +143,7 @@ export default function GuestsPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { label: 'Total', value: guests.length, icon: null, color: 'text-gray-700 dark:text-gray-300' },
               { label: 'Confirmed', value: confirmed, icon: CheckCircle, color: 'text-emerald-600' },
@@ -192,8 +192,8 @@ export default function GuestsPage() {
               ) : filtered.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-8">No guests found. Add your first guest!</p>
               ) : (
-                <div className="divide-y divide-gray-50 dark:divide-gray-800">
-                  <div className="grid grid-cols-6 px-4 py-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50 dark:bg-gray-800/50 rounded-t-xl">
+                  <div className="divide-y divide-gray-50 dark:divide-gray-800">
+                  <div className="hidden sm:grid grid-cols-6 px-4 py-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50 dark:bg-gray-800/50 rounded-t-xl">
                     <span className="col-span-2">Name</span>
                     <span>Side</span>
                     <span>Group</span>
@@ -201,30 +201,31 @@ export default function GuestsPage() {
                     <span>Invite</span>
                   </div>
                   {filtered.map(guest => (
-                    <div key={guest.id} className="grid grid-cols-6 px-4 py-3 items-center hover:bg-gray-50 dark:hover:bg-gray-800/40 group">
-                      <div className="col-span-2">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{guest.name}</p>
+                    <div key={guest.id} className="flex sm:grid sm:grid-cols-6 px-4 py-3 items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800/40 group">
+                      <div className="flex-1 sm:col-span-2 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{guest.name}</p>
                         {guest.phone && <p className="text-xs text-gray-400 dark:text-gray-500">{guest.phone}</p>}
                       </div>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">{guest.side}</span>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">{guest.group}</span>
-                      <span className={`text-xs font-medium ${guest.rsvp_status === 'Confirmed' ? 'text-emerald-600' : guest.rsvp_status === 'Declined' ? 'text-red-500' : 'text-amber-600'}`}>
+                      <span className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">{guest.side}</span>
+                      <span className="hidden sm:block text-xs text-gray-600 dark:text-gray-400">{guest.group}</span>
+                      <span className={`text-xs font-medium shrink-0 ${guest.rsvp_status === 'Confirmed' ? 'text-emerald-600' : guest.rsvp_status === 'Declined' ? 'text-red-500' : 'text-amber-600'}`}>
                         {guest.rsvp_status}
                       </span>
-                      <div className="flex items-center gap-1">
+                      <div className="hidden sm:flex items-center gap-1">
                         <span className={`text-xs ${guest.invitation_sent ? 'text-emerald-600' : 'text-gray-400'}`}>
                           {guest.invitation_sent ? '✓ Sent' : 'Pending'}
                         </span>
-                        <div className="ml-auto flex gap-1 opacity-0 group-hover:opacity-100">
-                          <button onClick={() => { setEditGuest(guest); setShowForm(true) }} className="p-1 text-gray-400 hover:text-gray-600"><Edit2 className="w-3 h-3" /></button>
-                          <button onClick={() => deleteGuest(guest.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3 h-3" /></button>
-                        </div>
+                      </div>
+                      <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100">
+                        <button onClick={() => { setEditGuest(guest); setShowForm(true) }} className="p-1 text-gray-400 hover:text-gray-600"><Edit2 className="w-3 h-3" /></button>
+                        <button onClick={() => deleteGuest(guest.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3 h-3" /></button>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </CardContent>
+
           </Card>
         </main>
       </div>

@@ -1,11 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Search, Bell, Sun, Moon } from 'lucide-react'
+import { Search, Bell, Sun, Moon, Menu } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { useSidebar } from './SidebarContext'
 
 export default function Header() {
   const [query, setQuery] = useState('')
   const [dark, setDark] = useState(false)
+  const { toggle } = useSidebar()
 
   useEffect(() => {
     const saved = localStorage.getItem('theme')
@@ -25,7 +27,10 @@ export default function Header() {
   }
 
   return (
-    <header className="h-12 border-b border-gray-100 bg-white dark:bg-gray-900 dark:border-gray-800 flex items-center px-5 gap-4 shrink-0">
+    <header className="h-12 border-b border-gray-100 bg-white dark:bg-gray-900 dark:border-gray-800 flex items-center px-3 md:px-5 gap-2 md:gap-4 shrink-0">
+      <button onClick={toggle} className="md:hidden p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+        <Menu className="w-5 h-5" />
+      </button>
       <div className="flex-1 max-w-sm relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
         <Input

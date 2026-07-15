@@ -156,7 +156,7 @@ export default function DashboardPage() {
       </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           {
             label: 'Tasks Done', icon: CheckSquare, color: 'text-emerald-600',
@@ -218,7 +218,7 @@ export default function DashboardPage() {
             Manage <ChevronRight className="w-3 h-3" />
           </Link>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {EVENTS.map(event => {
             const es = eventStats[event.id] || { done: 0, total: 0 }
             const pct = es.total > 0 ? Math.round((es.done / es.total) * 100) : 0

@@ -120,7 +120,7 @@ export default function VendorsPage() {
               {byCategory.map(cat => (
                 <div key={cat}>
                   <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">{cat}</h2>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {vendors.filter(v => v.category === cat).map(vendor => (
                       <Card key={vendor.id} className="card-hover group">
                         <CardContent className="p-4">

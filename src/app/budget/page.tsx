@@ -170,7 +170,7 @@ export default function BudgetPage() {
           </div>
 
           {/* Summary */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { label: 'Total budget', value: formatCurrency(totalBudget), color: 'text-gray-900 dark:text-gray-100' },
               { label: 'Spent so far', value: formatCurrency(spent), color: 'text-red-600' },
@@ -192,7 +192,7 @@ export default function BudgetPage() {
 
           {/* Charts */}
           {byCategory.length > 0 || byEvent.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {byCategory.length > 0 && (
                 <Card>
                   <CardHeader><CardTitle>Spending by category</CardTitle></CardHeader>
