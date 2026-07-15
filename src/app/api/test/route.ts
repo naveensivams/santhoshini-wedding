@@ -13,6 +13,7 @@ export async function GET() {
     const data = await res.json()
     return Response.json({ status: res.status, supabase: data, urlPrefix: url.slice(0, 30) })
   } catch (e) {
-    return Response.json({ fetchError: (e as Error).message, urlPrefix: url.slice(0, 30) })
+    const err = e as Error & { cause?: Error }
+    return Response.json({ fetchError: err.message, cause: err.cause?.message, urlPrefix: url.slice(0, 30) })
   }
 }
