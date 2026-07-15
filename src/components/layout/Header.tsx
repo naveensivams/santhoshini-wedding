@@ -29,7 +29,7 @@ export default function Header() {
       <div className="flex-1 max-w-sm relative">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
         <Input
-          className="pl-8 h-7 text-xs bg-gray-50 border-gray-100"
+          className="pl-8 h-7 text-xs bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
           placeholder="Search everything..."
           value={query}
           onChange={e => setQuery(e.target.value)}

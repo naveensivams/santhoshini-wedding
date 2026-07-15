@@ -23,13 +23,13 @@ function DialogContent({ className, children, ...props }: React.ComponentPropsWi
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
-          'fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] bg-white rounded-xl shadow-xl border border-gray-100 animate-in fade-in-0 zoom-in-95 slide-in-from-left-1/2 slide-in-from-top-[48%]',
+          'fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 animate-in fade-in-0 zoom-in-95 slide-in-from-left-1/2 slide-in-from-top-[48%]',
           className
         )}
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
           <X className="h-4 w-4" />
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
@@ -38,15 +38,15 @@ function DialogContent({ className, children, ...props }: React.ComponentPropsWi
 }
 
 function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('px-6 pt-6 pb-4 border-b border-gray-100', className)} {...props} />
+  return <div className={cn('px-6 pt-6 pb-4 border-b border-gray-100 dark:border-gray-800', className)} {...props} />
 }
 
 function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('px-6 py-4 border-t border-gray-100 flex justify-end gap-3', className)} {...props} />
+  return <div className={cn('px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3', className)} {...props} />
 }
 
 function DialogTitle({ className, ...props }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>) {
-  return <DialogPrimitive.Title className={cn('text-lg font-semibold text-gray-900', className)} {...props} />
+  return <DialogPrimitive.Title className={cn('text-lg font-semibold text-gray-900 dark:text-gray-100', className)} {...props} />
 }
 
 function DialogDescription({ className, ...props }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>) {

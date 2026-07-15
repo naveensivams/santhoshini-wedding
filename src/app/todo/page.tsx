@@ -58,7 +58,7 @@ export default function TodoPage() {
                     <button onClick={() => toggle(todo)} className={`shrink-0 ${todo.done ? 'text-emerald-500' : 'text-gray-300 hover:text-emerald-400'}`}>
                       {todo.done ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
                     </button>
-                    <span className={`text-sm flex-1 ${todo.done ? 'line-through text-gray-400' : 'text-gray-900'}`}>{todo.text}</span>
+                    <span className={`text-sm flex-1 ${todo.done ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>{todo.text}</span>
                     <button onClick={() => remove(todo.id)} className="p-1 text-gray-300 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                   </CardContent>
                 </Card>

@@ -101,8 +101,8 @@ export default function VendorsPage() {
         <main className="flex-1 overflow-y-auto p-5 space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Vendor Directory</h1>
-              <p className="text-sm text-gray-500">{vendors.length} vendors saved</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Vendor Directory</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{vendors.length} vendors saved</p>
             </div>
             <Button onClick={() => { setEditVendor(null); setShowForm(true) }}>
               <Plus className="w-4 h-4" /> Add Vendor
@@ -119,15 +119,15 @@ export default function VendorsPage() {
             <div className="space-y-6">
               {byCategory.map(cat => (
                 <div key={cat}>
-                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{cat}</h2>
+                  <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">{cat}</h2>
                   <div className="grid grid-cols-3 gap-3">
                     {vendors.filter(v => v.category === cat).map(vendor => (
                       <Card key={vendor.id} className="card-hover group">
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-2">
                             <div>
-                              <p className="font-semibold text-gray-900 text-sm">{vendor.name}</p>
-                              <p className="text-xs text-gray-400">{vendor.category}</p>
+                              <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{vendor.name}</p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500">{vendor.category}</p>
                             </div>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100">
                               <button onClick={() => { setEditVendor(vendor); setShowForm(true) }} className="p-1 text-gray-400 hover:text-gray-600"><Edit2 className="w-3.5 h-3.5" /></button>
@@ -137,7 +137,7 @@ export default function VendorsPage() {
                           {vendor.rating && (
                             <div className="flex items-center gap-0.5 mb-2">
                               {Array.from({ length: 5 }).map((_, i) => (
-                                <Star key={i} className={`w-3 h-3 ${i < vendor.rating! ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />
+                                <Star key={i} className={`w-3 h-3 ${i < vendor.rating! ? 'text-amber-400 fill-amber-400' : 'text-gray-200 dark:text-gray-700'}`} />
                               ))}
                             </div>
                           )}
@@ -146,7 +146,7 @@ export default function VendorsPage() {
                               <Phone className="w-3 h-3" /> {vendor.phone}
                             </a>
                           )}
-                          {vendor.notes && <p className="text-xs text-gray-400 mt-2 line-clamp-2">{vendor.notes}</p>}
+                          {vendor.notes && <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 line-clamp-2">{vendor.notes}</p>}
                         </CardContent>
                       </Card>
                     ))}

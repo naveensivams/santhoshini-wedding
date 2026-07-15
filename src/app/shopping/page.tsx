@@ -113,8 +113,8 @@ export default function ShoppingPage() {
         <main className="flex-1 overflow-y-auto p-5 space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Shopping Planner</h1>
-              <p className="text-sm text-gray-500">{purchased}/{items.length} purchased · {formatCurrency(totalBudget)} total budget</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Shopping Planner</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{purchased}/{items.length} purchased · {formatCurrency(totalBudget)} total budget</p>
             </div>
             <Button onClick={() => { setEditItem(null); setShowForm(true) }}>
               <Plus className="w-4 h-4" /> Add Item
@@ -134,7 +134,7 @@ export default function ShoppingPage() {
                 if (catItems.length === 0) return null
                 return (
                   <div key={cat}>
-                    <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">{cat}</h2>
+                    <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">{cat}</h2>
                     <div className="space-y-2">
                       {catItems.map(item => (
                         <Card key={item.id} className={`transition-opacity ${item.status === 'Purchased' ? 'opacity-60' : ''}`}>
@@ -143,13 +143,13 @@ export default function ShoppingPage() {
                               {item.status === 'Purchased' ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5 text-gray-300" />}
                             </button>
                             <div className="flex-1 min-w-0">
-                              <p className={`text-sm font-medium ${item.status === 'Purchased' ? 'line-through text-gray-400' : 'text-gray-900'}`}>{item.name}</p>
-                              <p className="text-xs text-gray-400">
+                              <p className={`text-sm font-medium ${item.status === 'Purchased' ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>{item.name}</p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500">
                                 Qty: {item.quantity}{item.store ? ` · ${item.store}` : ''}{item.event_name ? ` · ${item.event_name}` : ''}
                               </p>
                             </div>
                             {item.budget_amount && <span className="text-sm font-semibold text-emerald-600 shrink-0">{formatCurrency(item.budget_amount)}</span>}
-                            <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${item.status === 'Purchased' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{item.status}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${item.status === 'Purchased' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'}`}>{item.status}</span>
                             <button onClick={() => { setEditItem(item); setShowForm(true) }} className="p-1 text-gray-400 hover:text-gray-600"><Edit2 className="w-3.5 h-3.5" /></button>
                             <button onClick={() => deleteItem(item.id)} className="p-1 text-gray-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                           </CardContent>

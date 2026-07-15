@@ -134,8 +134,8 @@ export default function GuestsPage() {
         <main className="flex-1 overflow-y-auto p-5 space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Guest List</h1>
-              <p className="text-sm text-gray-500">{guests.length} total guests</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Guest List</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{guests.length} total guests</p>
             </div>
             <Button onClick={() => { setEditGuest(null); setShowForm(true) }}>
               <Plus className="w-4 h-4" /> Add Guest
@@ -145,7 +145,7 @@ export default function GuestsPage() {
           {/* Stats */}
           <div className="grid grid-cols-4 gap-3">
             {[
-              { label: 'Total', value: guests.length, icon: null, color: 'text-gray-700' },
+              { label: 'Total', value: guests.length, icon: null, color: 'text-gray-700 dark:text-gray-300' },
               { label: 'Confirmed', value: confirmed, icon: CheckCircle, color: 'text-emerald-600' },
               { label: 'Pending', value: pending, icon: Clock, color: 'text-amber-600' },
               { label: 'Declined', value: declined, icon: XCircle, color: 'text-red-500' },
@@ -154,7 +154,7 @@ export default function GuestsPage() {
                 <CardContent className="p-4 flex items-center gap-3">
                   {Icon && <Icon className={`w-6 h-6 ${color} shrink-0`} />}
                   <div>
-                    <p className="text-xs text-gray-500">{label}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
                     <p className={`text-2xl font-bold ${color}`}>{value}</p>
                   </div>
                 </CardContent>
@@ -192,8 +192,8 @@ export default function GuestsPage() {
               ) : filtered.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-8">No guests found. Add your first guest!</p>
               ) : (
-                <div className="divide-y divide-gray-50">
-                  <div className="grid grid-cols-6 px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 rounded-t-xl">
+                <div className="divide-y divide-gray-50 dark:divide-gray-800">
+                  <div className="grid grid-cols-6 px-4 py-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50 dark:bg-gray-800/50 rounded-t-xl">
                     <span className="col-span-2">Name</span>
                     <span>Side</span>
                     <span>Group</span>
@@ -201,13 +201,13 @@ export default function GuestsPage() {
                     <span>Invite</span>
                   </div>
                   {filtered.map(guest => (
-                    <div key={guest.id} className="grid grid-cols-6 px-4 py-3 items-center hover:bg-gray-50 group">
+                    <div key={guest.id} className="grid grid-cols-6 px-4 py-3 items-center hover:bg-gray-50 dark:hover:bg-gray-800/40 group">
                       <div className="col-span-2">
-                        <p className="text-sm font-medium text-gray-900">{guest.name}</p>
-                        {guest.phone && <p className="text-xs text-gray-400">{guest.phone}</p>}
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{guest.name}</p>
+                        {guest.phone && <p className="text-xs text-gray-400 dark:text-gray-500">{guest.phone}</p>}
                       </div>
-                      <span className="text-xs text-gray-600">{guest.side}</span>
-                      <span className="text-xs text-gray-600">{guest.group}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{guest.side}</span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">{guest.group}</span>
                       <span className={`text-xs font-medium ${guest.rsvp_status === 'Confirmed' ? 'text-emerald-600' : guest.rsvp_status === 'Declined' ? 'text-red-500' : 'text-amber-600'}`}>
                         {guest.rsvp_status}
                       </span>

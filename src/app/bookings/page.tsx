@@ -42,14 +42,14 @@ function BookingCard({ booking, onEdit, onDelete, onMark }: { booking: Booking; 
     <motion.div
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-white rounded-xl border p-4 transition-shadow hover:shadow-md ${isOverdue ? 'border-red-200 bg-red-50/30' : 'border-gray-100'}`}
+      className={`bg-white dark:bg-gray-900 rounded-xl border p-4 transition-shadow hover:shadow-md ${isOverdue ? 'border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-950/20' : 'border-gray-100 dark:border-gray-800'}`}
     >
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-lg shrink-0">{catInfo?.icon || '📋'}</span>
           <div className="min-w-0">
-            <p className="font-semibold text-gray-900 text-sm">{booking.category}</p>
-            {booking.vendor_name && <p className="text-xs text-gray-500 truncate">{booking.vendor_name}{booking.event_name ? ` · ${booking.event_name}` : ''}</p>}
+            <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{booking.category}</p>
+            {booking.vendor_name && <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{booking.vendor_name}{booking.event_name ? ` · ${booking.event_name}` : ''}</p>}
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -61,14 +61,14 @@ function BookingCard({ booking, onEdit, onDelete, onMark }: { booking: Booking; 
       </div>
 
       <div className="flex items-center gap-2 mt-2">
-        <div className="h-1.5 flex-1 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-1.5 flex-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all ${booking.status === 'Confirmed' ? 'bg-green-500 w-full' : booking.status === 'Booked' ? 'bg-blue-500 w-4/5' : booking.status === 'Negotiating' ? 'bg-yellow-500 w-3/5' : booking.status === 'Enquired' ? 'bg-purple-400 w-2/5' : 'w-0'}`}
           />
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+      <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-2">
           {booking.status === 'Not Booked' && (
             <Button size="sm" variant="outline" className="h-6 text-xs px-2" onClick={() => onMark('Enquired')}>
@@ -230,8 +230,8 @@ export default function BookingsPage() {
         <main className="flex-1 overflow-y-auto p-5 space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Vendor Bookings</h1>
-              <p className="text-sm text-gray-500">Makeup, clothes, decoration, catering — every critical booking, tracked to confirmation.</p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Vendor Bookings</h1>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Makeup, clothes, decoration, catering — every critical booking, tracked to confirmation.</p>
             </div>
             <Button onClick={() => { setEditBooking(null); setShowForm(true) }}>
               <Plus className="w-4 h-4" /> Add Booking
@@ -250,8 +250,8 @@ export default function BookingsPage() {
                 <CardContent className="p-4 flex items-center gap-3">
                   <Icon className={`w-8 h-8 ${color} shrink-0`} />
                   <div>
-                    <p className="text-xs text-gray-500">{label}</p>
-                    <p className="text-xl font-bold text-gray-900">{value}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
                     <p className="text-xs text-gray-400">{sub}</p>
                   </div>
                 </CardContent>
@@ -261,7 +261,7 @@ export default function BookingsPage() {
 
           {/* Booking list */}
           <div>
-            <h2 className="text-sm font-semibold text-gray-700 mb-3">All bookings, most urgent first</h2>
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">All bookings, most urgent first</h2>
             {loading ? (
               <div className="flex items-center justify-center h-40"><Loader2 className="w-6 h-6 text-emerald-500 animate-spin" /></div>
             ) : bookings.length === 0 ? (

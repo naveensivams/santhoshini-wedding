@@ -172,7 +172,7 @@ export default function BudgetPage() {
           {/* Summary */}
           <div className="grid grid-cols-3 gap-4">
             {[
-              { label: 'Total budget', value: formatCurrency(totalBudget), color: 'text-gray-900' },
+              { label: 'Total budget', value: formatCurrency(totalBudget), color: 'text-gray-900 dark:text-gray-100' },
               { label: 'Spent so far', value: formatCurrency(spent), color: 'text-red-600' },
               { label: 'Remaining', value: formatCurrency(remaining), color: remaining >= 0 ? 'text-emerald-600' : 'text-red-600' },
             ].map(({ label, value, color }) => (
