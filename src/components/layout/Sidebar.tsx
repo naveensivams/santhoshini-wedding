@@ -69,6 +69,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         {/* Dashboard */}
         <Link
           href="/dashboard"
+          onClick={() => onClose?.()}
           className={cn(
             'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors mb-1',
             pathname === '/dashboard'
@@ -98,6 +99,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                   <Link
                     key={event.id}
                     href={`/events/${event.slug}`}
+                    onClick={() => onClose?.()}
                     className={cn(
                       'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors',
                       isActive
@@ -117,6 +119,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
               })}
               <Link
                 href="/events/manage"
+                onClick={() => onClose?.()}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
               >
                 <Plus className="w-4 h-4 shrink-0" />
@@ -136,6 +139,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                 <Link
                   key={href}
                   href={href}
+                  onClick={() => onClose?.()}
                   className={cn(
                     'flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors',
                     isActive
