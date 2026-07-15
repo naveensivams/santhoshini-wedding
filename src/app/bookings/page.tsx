@@ -15,10 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BOOKING_CATEGORIES, BOOKING_STATUSES, EVENTS, WEDDING_DATE } from '@/lib/constants'
 import { getBookingUrgency, getStatusColor, formatCurrency, formatDate, getDaysUntil } from '@/lib/utils'
 import type { Booking } from '@/types'
-
-const SK = 'wedding_bookings'
-function ls(): Booking[] { try { return JSON.parse(localStorage.getItem(SK)||'[]') } catch { return [] } }
-function ss(d: Booking[]) { localStorage.setItem(SK, JSON.stringify(d)) }
+import { createClient } from '@/lib/supabase/client'
 
 const daysLeft = Math.max(0, Math.ceil((WEDDING_DATE.getTime() - Date.now()) / 86400000))
 
@@ -117,13 +114,13 @@ function BookingForm({ booking, onClose, onSaved }: { booking?: Booking | null; 
   const [notes, setNotes] = useState(booking?.notes || '')
   const [saving, setSaving] = useState(false)
 
-  function save() {
+  async function save() {
     if (!category) return
     setSaving(true)
     const selectedEvent = EVENTS.find(e => e.id === eventId)
-    const payload = { category, vendor_name: vendorName||undefined, status, event_id: eventId||undefined, event_name: selectedEvent?.name||undefined, advance_paid: parseFloat(advance)||0, balance_due: parseFloat(balance)||0, contact_name: contactName||undefined, contact_phone: contactPhone||undefined, notes: notes||undefined, contract_signed: false, trial_scheduled: false, created_at: new Date().toISOString() }
-    const all = ls()
-    if (booking?.id) { ss(all.map(b => b.id===booking.id ? {...b,...payload} as Booking : b)) } else { ss([{...payload,id:crypto.randomUUID()} as Booking,...all]) }
+    const payload = { category, vendor_name: vendorName||null, status, event_id: eventId||null, event_name: selectedEvent?.name||null, advance_paid: parseFloat(advance)||0, balance_due: parseFloat(balance)||0, contact_name: contactName||null, contact_phone: contactPhone||null, notes: notes||null, contract_signed: false, trial_scheduled: false }
+    const sb = createClient()
+    if (booking?.id) { await sb.from('bookings').update(payload).eq('id', booking.id) } else { await sb.from('bookings').insert({ ...payload, id: crypto.randomUUID() }) }
     setSaving(false); onSaved()
   }
 
@@ -211,11 +208,19 @@ export default function BookingsPage() {
     return u === 'Critical' || u === 'Overdue'
   }).length
 
-  function load() { setBookings(ls()); setLoading(false) }
-  function markStatus(id: string, status: string) { ss(ls().map(b => b.id===id ? {...b,status} as Booking : b)); load() }
-  function deleteBooking(id: string) { ss(ls().filter(b => b.id!==id)); load() }
+  async function load() {
+    const { data } = await createClient().from('bookings').select('*').order('created_at', { ascending: false })
+    setBookings((data || []) as Booking[]); setLoading(false)
+  }
+  async function markStatus(id: string, status: string) { await createClient().from('bookings').update({ status }).eq('id', id); load() }
+  async function deleteBooking(id: string) { await createClient().from('bookings').delete().eq('id', id); load() }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    const sb = createClient()
+    const sub = sb.channel('bookings-ch').on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, load).subscribe()
+    return () => { sub.unsubscribe() }
+  }, [])
 
   const sorted = [...bookings].sort((a, b) => {
     const order = ['Not Booked', 'Enquired', 'Negotiating', 'Booked', 'Confirmed', 'Cancelled']

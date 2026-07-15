@@ -7,7 +7,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { EVENTS, WEDDING_DATE, PLANNING_START_DATE, ADMIN_NAME } from '@/lib/constants'
-import { getCountdown, getPlanningProgress, formatCurrency, formatDate } from '@/lib/utils'
+import { getCountdown, getPlanningProgress, formatCurrency, formatDate, getBookingUrgency } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -76,28 +77,25 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    function load() {
-      try {
-        const tasks = JSON.parse(localStorage.getItem('wedding_tasks')||'[]')
-        const bookings = JSON.parse(localStorage.getItem('wedding_bookings')||'[]')
-        const shopping = JSON.parse(localStorage.getItem('wedding_shopping')||'[]')
-        const budget = JSON.parse(localStorage.getItem('wedding_budget')||'[]')
-        const daysLeft = countdown.days
-        const { getBookingUrgency } = require('@/lib/utils')
-        const overdue = bookings
-          .filter((b: {status:string}) => b.status === 'Not Booked' || b.status === 'Enquired')
-          .filter((b: {category:string}) => { const u = getBookingUrgency(b.category, daysLeft); return u === 'Critical' || u === 'Overdue' })
-          .map((b: {category:string}) => b.category).slice(0, 3)
-        const estats: Record<string, { done: number; total: number }> = {}
-        EVENTS.forEach(e => { estats[e.id] = { done: 0, total: 0 } })
-        tasks.forEach((t: {event_id?:string;status:string}) => {
-          if (t.event_id && estats[t.event_id]) { estats[t.event_id].total++; if (t.status === 'Completed') estats[t.event_id].done++ }
-        })
-        const totalBudget = budget.filter((b: {type:string}) => b.type === 'Budget').reduce((s: number, b: {amount:number}) => s + (b.amount||0), 0)
-        const spentBudget = budget.filter((b: {type:string}) => b.type === 'Expense' || b.type === 'Advance').reduce((s: number, b: {amount:number}) => s + (b.amount||0), 0)
-        setStats({ totalTasks: tasks.length, completedTasks: tasks.filter((t: {status:string}) => t.status === 'Completed').length, totalBookings: bookings.length, confirmedBookings: bookings.filter((b: {status:string}) => b.status === 'Confirmed' || b.status === 'Booked').length, totalShopping: shopping.length, purchasedShopping: shopping.filter((s: {status:string}) => s.status === 'Purchased').length, totalBudget, spentBudget })
-        setOverdueBookings(overdue); setEventStats(estats)
-      } finally { setLoading(false) }
+    async function load() {
+      const sb = createClient()
+      const [{ data: tasks }, { data: bookings }, { data: shopping }, { data: budget }, { data: setting }] = await Promise.all([
+        sb.from('tasks').select('event_id,status'),
+        sb.from('bookings').select('category,status'),
+        sb.from('shopping_items').select('status'),
+        sb.from('budget_entries').select('type,amount,event_id'),
+        sb.from('settings').select('value').eq('key', 'total_budget').maybeSingle()
+      ])
+      const daysLeft = countdown.days
+      const overdue = (bookings||[]).filter((b: {status:string}) => b.status === 'Not Booked' || b.status === 'Enquired').filter((b: {category:string}) => { const u = getBookingUrgency(b.category, daysLeft); return u === 'Critical' || u === 'Overdue' }).map((b: {category:string}) => b.category).slice(0, 3)
+      const estats: Record<string, { done: number; total: number }> = {}
+      EVENTS.forEach(e => { estats[e.id] = { done: 0, total: 0 } })
+      ;(tasks||[]).forEach((t: {event_id?:string;status:string}) => { if (t.event_id && estats[t.event_id]) { estats[t.event_id].total++; if (t.status === 'Completed') estats[t.event_id].done++ } })
+      const savedTotal = parseFloat(setting?.value || '0')
+      const budgetTotal = savedTotal || (budget||[]).filter((b: {type:string}) => b.type === 'Budget').reduce((s: number, b: {amount:number}) => s + (b.amount||0), 0)
+      const spentBudget = (budget||[]).filter((b: {type:string}) => b.type === 'Expense' || b.type === 'Advance').reduce((s: number, b: {amount:number}) => s + (b.amount||0), 0)
+      setStats({ totalTasks: (tasks||[]).length, completedTasks: (tasks||[]).filter((t: {status:string}) => t.status === 'Completed').length, totalBookings: (bookings||[]).length, confirmedBookings: (bookings||[]).filter((b: {status:string}) => b.status === 'Confirmed' || b.status === 'Booked').length, totalShopping: (shopping||[]).length, purchasedShopping: (shopping||[]).filter((s: {status:string}) => s.status === 'Purchased').length, totalBudget: budgetTotal, spentBudget })
+      setOverdueBookings(overdue); setEventStats(estats); setLoading(false)
     }
     load()
   }, [countdown.days])

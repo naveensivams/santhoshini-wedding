@@ -6,11 +6,8 @@ import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
+import { createClient } from '@/lib/supabase/client'
 interface TodoItem { id: string; text: string; done: boolean; created_at: string }
-
-const SK = 'wedding_todos'
-function ls(): TodoItem[] { try { return JSON.parse(localStorage.getItem(SK)||'[]') } catch { return [] } }
-function ss(d: TodoItem[]) { localStorage.setItem(SK, JSON.stringify(d)) }
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<TodoItem[]>([])
@@ -18,17 +15,25 @@ export default function TodoPage() {
   const [newText, setNewText] = useState('')
   const [adding, setAdding] = useState(false)
 
-  function load() { setTodos(ls()); setLoading(false) }
-  function add() {
+  async function load() {
+    const { data } = await createClient().from('todo_items').select('*').order('created_at', { ascending: false })
+    setTodos((data || []) as TodoItem[]); setLoading(false)
+  }
+  async function add() {
     if (!newText.trim()) return
     setAdding(true)
-    ss([{id:crypto.randomUUID(),text:newText.trim(),done:false,created_at:new Date().toISOString()},...ls()])
-    setNewText(''); load(); setAdding(false)
+    await createClient().from('todo_items').insert({ id: crypto.randomUUID(), text: newText.trim(), done: false })
+    setNewText(''); setAdding(false); load()
   }
-  function toggle(todo: TodoItem) { ss(ls().map(t => t.id===todo.id ? {...t,done:!t.done} : t)); load() }
-  function remove(id: string) { ss(ls().filter(t => t.id!==id)); load() }
+  async function toggle(todo: TodoItem) { await createClient().from('todo_items').update({ done: !todo.done }).eq('id', todo.id); load() }
+  async function remove(id: string) { await createClient().from('todo_items').delete().eq('id', id); load() }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    const sb = createClient()
+    const sub = sb.channel('todos-ch').on('postgres_changes', { event: '*', schema: 'public', table: 'todo_items' }, load).subscribe()
+    return () => { sub.unsubscribe() }
+  }, [])
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">

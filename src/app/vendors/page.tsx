@@ -12,10 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { VENDOR_CATEGORIES } from '@/lib/constants'
 import type { Vendor } from '@/types'
-
-const SK = 'wedding_vendors'
-function ls(): Vendor[] { try { return JSON.parse(localStorage.getItem(SK)||'[]') } catch { return [] } }
-function ss(d: Vendor[]) { localStorage.setItem(SK, JSON.stringify(d)) }
+import { createClient } from '@/lib/supabase/client'
 
 function VendorForm({ vendor, onClose, onSaved }: { vendor?: Vendor | null; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState(vendor?.name || '')
@@ -26,12 +23,12 @@ function VendorForm({ vendor, onClose, onSaved }: { vendor?: Vendor | null; onCl
   const [notes, setNotes] = useState(vendor?.notes || '')
   const [saving, setSaving] = useState(false)
 
-  function save() {
+  async function save() {
     if (!name.trim() || !category) return
     setSaving(true)
-    const payload = { name: name.trim(), phone: phone||undefined, email: email||undefined, category, rating: rating ? parseInt(rating) : undefined, notes: notes||undefined, created_at: new Date().toISOString() }
-    const all = ls()
-    if (vendor?.id) { ss(all.map(v => v.id===vendor.id ? {...v,...payload} : v)) } else { ss([{...payload,id:crypto.randomUUID()},...all]) }
+    const payload = { name: name.trim(), phone: phone||null, email: email||null, category, rating: rating ? parseInt(rating) : null, notes: notes||null }
+    const sb = createClient()
+    if (vendor?.id) { await sb.from('vendors').update(payload).eq('id', vendor.id) } else { await sb.from('vendors').insert({ ...payload, id: crypto.randomUUID() }) }
     setSaving(false); onSaved()
   }
 
@@ -86,10 +83,18 @@ export default function VendorsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editVendor, setEditVendor] = useState<Vendor | null>(null)
 
-  function load() { setVendors(ls()); setLoading(false) }
-  function deleteVendor(id: string) { ss(ls().filter(v => v.id!==id)); load() }
+  async function load() {
+    const { data } = await createClient().from('vendors').select('*').order('created_at', { ascending: false })
+    setVendors((data || []) as Vendor[]); setLoading(false)
+  }
+  async function deleteVendor(id: string) { await createClient().from('vendors').delete().eq('id', id); load() }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    const sb = createClient()
+    const sub = sb.channel('vendors-ch').on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, load).subscribe()
+    return () => { sub.unsubscribe() }
+  }, [])
 
   const byCategory = VENDOR_CATEGORIES.filter(cat => vendors.some(v => v.category === cat))
 

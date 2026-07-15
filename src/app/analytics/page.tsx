@@ -1,15 +1,34 @@
 'use client'
+import { useState, useEffect } from 'react'
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
 import Sidebar from '@/components/layout/Sidebar'
 import Header from '@/components/layout/Header'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EVENTS } from '@/lib/constants'
+import { createClient } from '@/lib/supabase/client'
 
 export default function AnalyticsPage() {
-  const tasks: { event_id?: string; status: string }[] = (() => { try { return JSON.parse(localStorage.getItem('wedding_tasks')||'[]') } catch { return [] } })()
-  const bookings: { status: string }[] = (() => { try { return JSON.parse(localStorage.getItem('wedding_bookings')||'[]') } catch { return [] } })()
-  const budget: { type: string; amount: number }[] = (() => { try { return JSON.parse(localStorage.getItem('wedding_budget')||'[]') } catch { return [] } })()
-  const guests: { rsvp_status: string }[] = (() => { try { return JSON.parse(localStorage.getItem('wedding_guests')||'[]') } catch { return [] } })()
+  const [tasks, setTasks] = useState<{ event_id?: string; status: string }[]>([])
+  const [bookings, setBookings] = useState<{ status: string }[]>([])
+  const [budget, setBudget] = useState<{ type: string; amount: number }[]>([])
+  const [guests, setGuests] = useState<{ rsvp_status: string }[]>([])
+  const [totalBudgetSetting, setTotalBudgetSetting] = useState(0)
+
+  useEffect(() => {
+    async function load() {
+      const sb = createClient()
+      const [{ data: t }, { data: b }, { data: bu }, { data: g }, { data: s }] = await Promise.all([
+        sb.from('tasks').select('event_id,status'),
+        sb.from('bookings').select('status'),
+        sb.from('budget_entries').select('type,amount'),
+        sb.from('guests').select('rsvp_status'),
+        sb.from('settings').select('value').eq('key', 'total_budget').maybeSingle()
+      ])
+      setTasks(t || []); setBookings(b || []); setBudget(bu || []); setGuests(g || [])
+      setTotalBudgetSetting(parseFloat(s?.value || '0'))
+    }
+    load()
+  }, [])
 
   const eventData = EVENTS.map(ev => {
     const evTasks = tasks.filter(t => t.event_id === ev.id)
@@ -18,7 +37,7 @@ export default function AnalyticsPage() {
   })
 
   const radarData = eventData.map(e => ({ subject: e.name, completion: e.pct }))
-  const totalBudget = budget.filter(b => b.type === 'Budget').reduce((s, b) => s + b.amount, 0)
+  const totalBudget = totalBudgetSetting || budget.filter(b => b.type === 'Budget').reduce((s, b) => s + b.amount, 0)
   const spent = budget.filter(b => b.type === 'Expense' || b.type === 'Advance').reduce((s, b) => s + b.amount, 0)
   const confirmedBookings = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Booked').length
   const confirmedGuests = guests.filter(g => g.rsvp_status === 'Confirmed').length

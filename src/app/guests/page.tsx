@@ -12,10 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { GUEST_GROUPS } from '@/lib/constants'
 import type { Guest } from '@/types'
-
-const SK = 'wedding_guests'
-function ls(): Guest[] { try { return JSON.parse(localStorage.getItem(SK)||'[]') } catch { return [] } }
-function ss(d: Guest[]) { localStorage.setItem(SK, JSON.stringify(d)) }
+import { createClient } from '@/lib/supabase/client'
 
 const SIDES = ['Bride', 'Groom', 'Both'] as const
 const RSVP = ['Pending', 'Confirmed', 'Declined'] as const
@@ -31,12 +28,12 @@ function GuestForm({ guest, onClose, onSaved }: { guest?: Guest | null; onClose:
   const [inviteSent, setInviteSent] = useState(guest?.invitation_sent || false)
   const [saving, setSaving] = useState(false)
 
-  function save() {
+  async function save() {
     if (!name.trim()) return
     setSaving(true)
-    const payload = { name: name.trim(), phone: phone||undefined, email: email||undefined, side: side as Guest['side'], group, rsvp_status: rsvp as Guest['rsvp_status'], food_preference: food||undefined, invitation_sent: inviteSent, created_at: new Date().toISOString() }
-    const all = ls()
-    if (guest?.id) { ss(all.map(g => g.id===guest.id ? {...g,...payload} : g)) } else { ss([{...payload,id:crypto.randomUUID()},...all]) }
+    const payload = { name: name.trim(), phone: phone||null, email: email||null, side: side as Guest['side'], group, rsvp_status: rsvp as Guest['rsvp_status'], food_preference: food||null, invitation_sent: inviteSent }
+    const sb = createClient()
+    if (guest?.id) { await sb.from('guests').update(payload).eq('id', guest.id) } else { await sb.from('guests').insert({ ...payload, id: crypto.randomUUID() }) }
     setSaving(false); onSaved()
   }
 
@@ -110,10 +107,18 @@ export default function GuestsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editGuest, setEditGuest] = useState<Guest | null>(null)
 
-  function load() { setGuests(ls()); setLoading(false) }
-  function deleteGuest(id: string) { ss(ls().filter(g => g.id!==id)); load() }
+  async function load() {
+    const { data } = await createClient().from('guests').select('*').order('created_at', { ascending: false })
+    setGuests((data || []) as Guest[]); setLoading(false)
+  }
+  async function deleteGuest(id: string) { await createClient().from('guests').delete().eq('id', id); load() }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    const sb = createClient()
+    const sub = sb.channel('guests-ch').on('postgres_changes', { event: '*', schema: 'public', table: 'guests' }, load).subscribe()
+    return () => { sub.unsubscribe() }
+  }, [])
 
   const filtered = guests.filter(g => {
     if (search && !g.name.toLowerCase().includes(search.toLowerCase())) return false

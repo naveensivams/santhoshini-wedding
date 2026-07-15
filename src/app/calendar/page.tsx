@@ -1,13 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Sidebar from '@/components/layout/Sidebar'
 import Header from '@/components/layout/Header'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { EVENTS } from '@/lib/constants'
 import type { Task } from '@/types'
-
-function getTasks(): Task[] { try { return JSON.parse(localStorage.getItem('wedding_tasks')||'[]') } catch { return [] } }
-function getShopping(): { id: string; name: string; status: string; planned_date?: string }[] { try { return JSON.parse(localStorage.getItem('wedding_shopping')||'[]') } catch { return [] } }
+import { createClient } from '@/lib/supabase/client'
 
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
@@ -16,12 +14,23 @@ export default function CalendarPage() {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [shopping, setShopping] = useState<{ id: string; name: string; status: string; planned_date?: string }[]>([])
+
+  useEffect(() => {
+    async function load() {
+      const sb = createClient()
+      const [{ data: t }, { data: s }] = await Promise.all([
+        sb.from('tasks').select('id,title,due_date,status'),
+        sb.from('shopping_items').select('id,name,status,planned_date').not('planned_date', 'is', null)
+      ])
+      setTasks((t || []) as Task[]); setShopping(s || [])
+    }
+    load()
+  }, [])
 
   const firstDay = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-
-  const tasks = getTasks()
-  const shopping = getShopping().filter(s => s.planned_date)
 
   function prev() { if (month === 0) { setMonth(11); setYear(y => y-1) } else setMonth(m => m-1) }
   function next() { if (month === 11) { setMonth(0); setYear(y => y+1) } else setMonth(m => m+1) }

@@ -13,10 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { EVENTS } from '@/lib/constants'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { BudgetEntry } from '@/types'
-
-const SK = 'wedding_budget'
-function ls(): BudgetEntry[] { try { return JSON.parse(localStorage.getItem(SK)||'[]') } catch { return [] } }
-function ss(d: BudgetEntry[]) { localStorage.setItem(SK, JSON.stringify(d)) }
+import { createClient } from '@/lib/supabase/client'
 
 const TYPES = ['Budget', 'Expense', 'Advance', 'Payment'] as const
 const COLORS = ['#059669', '#D4AF37', '#f59e0b', '#7c3aed', '#ef4444', '#3b82f6']
@@ -31,13 +28,13 @@ function BudgetForm({ entry, onClose, onSaved }: { entry?: BudgetEntry | null; o
   const [vendorName, setVendorName] = useState(entry?.vendor_name || '')
   const [saving, setSaving] = useState(false)
 
-  function save() {
+  async function save() {
     if (!description || !amount) return
     setSaving(true)
     const selectedEvent = EVENTS.find(e => e.id === eventId)
-    const payload = { description, amount: parseFloat(amount), type: type as BudgetEntry['type'], event_id: eventId||undefined, event_name: selectedEvent?.name||undefined, category: category||undefined, date, vendor_name: vendorName||undefined, created_at: new Date().toISOString() }
-    const all = ls()
-    if (entry?.id) { ss(all.map(e => e.id===entry.id ? {...e,...payload} : e)) } else { ss([{...payload,id:crypto.randomUUID()},...all]) }
+    const payload = { description, amount: parseFloat(amount), type: type as BudgetEntry['type'], event_id: eventId||null, event_name: selectedEvent?.name||null, category: category||null, date, vendor_name: vendorName||null }
+    const sb = createClient()
+    if (entry?.id) { await sb.from('budget_entries').update(payload).eq('id', entry.id) } else { await sb.from('budget_entries').insert({ ...payload, id: crypto.randomUUID() }) }
     setSaving(false); onSaved()
   }
 
@@ -94,8 +91,6 @@ function BudgetForm({ entry, onClose, onSaved }: { entry?: BudgetEntry | null; o
   )
 }
 
-const BUDGET_TOTAL_KEY = 'wedding_total_budget'
-
 export default function BudgetPage() {
   const [entries, setEntries] = useState<BudgetEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -104,21 +99,31 @@ export default function BudgetPage() {
   const [totalBudgetInput, setTotalBudgetInput] = useState('')
   const [savedTotal, setSavedTotal] = useState(0)
 
-  function load() {
-    setEntries(ls())
-    const saved = parseFloat(localStorage.getItem(BUDGET_TOTAL_KEY)||'0')
+  async function load() {
+    const sb = createClient()
+    const [{ data: entriesData }, { data: settingData }] = await Promise.all([
+      sb.from('budget_entries').select('*').order('date', { ascending: false }),
+      sb.from('settings').select('value').eq('key', 'total_budget').maybeSingle()
+    ])
+    setEntries((entriesData || []) as BudgetEntry[])
+    const saved = parseFloat(settingData?.value || '0')
     setSavedTotal(saved)
     setTotalBudgetInput(saved > 0 ? String(saved) : '')
     setLoading(false)
   }
-  function deleteEntry(id: string) { ss(ls().filter(e => e.id!==id)); load() }
-  function saveTotalBudget() {
+  async function deleteEntry(id: string) { await createClient().from('budget_entries').delete().eq('id', id); load() }
+  async function saveTotalBudget() {
     const val = parseFloat(totalBudgetInput) || 0
-    localStorage.setItem(BUDGET_TOTAL_KEY, String(val))
+    await createClient().from('settings').upsert({ key: 'total_budget', value: String(val) })
     setSavedTotal(val)
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    const sb = createClient()
+    const sub = sb.channel('budget-ch').on('postgres_changes', { event: '*', schema: 'public', table: 'budget_entries' }, load).subscribe()
+    return () => { sub.unsubscribe() }
+  }, [])
 
   const totalBudget = savedTotal || entries.filter(e => e.type === 'Budget').reduce((s, e) => s + e.amount, 0)
   const spent = entries.filter(e => e.type === 'Expense' || e.type === 'Advance').reduce((s, e) => s + e.amount, 0)

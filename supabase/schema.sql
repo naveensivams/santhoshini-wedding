@@ -149,9 +149,23 @@ CREATE TABLE IF NOT EXISTS todo_items (
 );
 
 -- ================================================================
--- ROW LEVEL SECURITY (RLS) — authenticated users only
+-- planned_date column for shopping items
 -- ================================================================
-ALTER TABLE profiles       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shopping_items ADD COLUMN IF NOT EXISTS planned_date TEXT;
+
+-- ================================================================
+-- SETTINGS — for app config like total_budget
+-- ================================================================
+CREATE TABLE IF NOT EXISTS settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ================================================================
+-- ROW LEVEL SECURITY — open access (no login required)
+-- Everyone with the app URL can read and write
+-- ================================================================
 ALTER TABLE tasks          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bookings       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE budget_entries ENABLE ROW LEVEL SECURITY;
@@ -159,13 +173,22 @@ ALTER TABLE shopping_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE guests         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vendors        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE todo_items     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE settings       DISABLE ROW LEVEL SECURITY;
 
--- Authenticated users can read/write everything
-CREATE POLICY "auth_all" ON profiles       FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_all" ON tasks          FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_all" ON bookings       FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_all" ON budget_entries FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_all" ON shopping_items FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_all" ON guests         FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_all" ON vendors        FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_all" ON todo_items     FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Drop old auth-only policies if they exist
+DROP POLICY IF EXISTS "auth_all" ON tasks;
+DROP POLICY IF EXISTS "auth_all" ON bookings;
+DROP POLICY IF EXISTS "auth_all" ON budget_entries;
+DROP POLICY IF EXISTS "auth_all" ON shopping_items;
+DROP POLICY IF EXISTS "auth_all" ON guests;
+DROP POLICY IF EXISTS "auth_all" ON vendors;
+DROP POLICY IF EXISTS "auth_all" ON todo_items;
+
+-- Allow anonymous (anyone with the URL) full read/write
+CREATE POLICY "open_all" ON tasks          FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "open_all" ON bookings       FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "open_all" ON budget_entries FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "open_all" ON shopping_items FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "open_all" ON guests         FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "open_all" ON vendors        FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "open_all" ON todo_items     FOR ALL TO anon USING (true) WITH CHECK (true);
