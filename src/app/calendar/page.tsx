@@ -7,6 +7,7 @@ import { EVENTS } from '@/lib/constants'
 import type { Task } from '@/types'
 
 function getTasks(): Task[] { try { return JSON.parse(localStorage.getItem('wedding_tasks')||'[]') } catch { return [] } }
+function getShopping(): { id: string; name: string; status: string; planned_date?: string }[] { try { return JSON.parse(localStorage.getItem('wedding_shopping')||'[]') } catch { return [] } }
 
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
@@ -20,6 +21,7 @@ export default function CalendarPage() {
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
   const tasks = getTasks()
+  const shopping = getShopping().filter(s => s.planned_date)
 
   function prev() { if (month === 0) { setMonth(11); setYear(y => y-1) } else setMonth(m => m-1) }
   function next() { if (month === 11) { setMonth(0); setYear(y => y+1) } else setMonth(m => m+1) }
@@ -31,6 +33,10 @@ export default function CalendarPage() {
   function getTasksForDay(day: number) {
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
     return tasks.filter(t => t.due_date === dateStr)
+  }
+  function getShoppingForDay(day: number) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+    return shopping.filter(s => s.planned_date === dateStr)
   }
 
   const cells = Array.from({ length: firstDay }, (_, i) => ({ day: 0, key: `e${i}` }))
@@ -62,6 +68,8 @@ export default function CalendarPage() {
                 if (!day) return <div key={key} className="min-h-24 border-b border-r border-gray-50 dark:border-gray-800/50" />
                 const evs = getEventsForDay(day)
                 const tks = getTasksForDay(day)
+                const shp = getShoppingForDay(day)
+                const total = tks.length + shp.length
                 return (
                   <div key={key} className={`min-h-24 p-1.5 border-b border-r border-gray-50 dark:border-gray-800/50 ${isToday(day) ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''}`}>
                     <span className={`text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1 ${isToday(day) ? 'bg-emerald-600 text-white' : 'text-gray-600 dark:text-gray-400'}`}>{day}</span>
@@ -71,12 +79,17 @@ export default function CalendarPage() {
                           {ev.icon} {ev.name}
                         </div>
                       ))}
-                      {tks.slice(0,2).map(t => (
+                      {tks.slice(0,1).map(t => (
                         <div key={t.id} className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 truncate">
                           📌 {t.title}
                         </div>
                       ))}
-                      {tks.length > 2 && <div className="text-[10px] text-gray-400">+{tks.length-2} more</div>}
+                      {shp.slice(0,1).map(s => (
+                        <div key={s.id} className={`text-[10px] px-1.5 py-0.5 rounded truncate ${s.status==='Purchased' ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 line-through' : 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'}`}>
+                          🛒 {s.name}
+                        </div>
+                      ))}
+                      {total > 2 && <div className="text-[10px] text-gray-400">+{total-2} more</div>}
                     </div>
                   </div>
                 )

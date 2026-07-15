@@ -94,6 +94,7 @@ export interface ShoppingItem {
   budget_amount?: number
   actual_price?: number
   store?: string
+  planned_date?: string
   status: ShoppingStatus
   assigned_to?: string
   assignee?: Profile

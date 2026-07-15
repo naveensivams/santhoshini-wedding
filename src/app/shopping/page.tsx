@@ -24,13 +24,14 @@ function ShoppingForm({ item, onClose, onSaved }: { item?: ShoppingItem | null; 
   const [budget, setBudget] = useState(String(item?.budget_amount || ''))
   const [store, setStore] = useState(item?.store || '')
   const [eventId, setEventId] = useState(item?.event_id || '')
+  const [plannedDate, setPlannedDate] = useState(item?.planned_date || '')
   const [saving, setSaving] = useState(false)
 
   function save() {
     if (!name.trim()) return
     setSaving(true)
     const selectedEvent = EVENTS.find(e => e.id === eventId)
-    const payload = { name: name.trim(), category: category||undefined, quantity: parseInt(quantity)||1, budget_amount: budget ? parseFloat(budget) : undefined, store: store||undefined, event_id: eventId||undefined, event_name: selectedEvent?.name||undefined, status: (item?.status || 'Pending') as ShoppingItem['status'], created_at: new Date().toISOString() }
+    const payload = { name: name.trim(), category: category||undefined, quantity: parseInt(quantity)||1, budget_amount: budget ? parseFloat(budget) : undefined, store: store||undefined, planned_date: plannedDate||undefined, event_id: eventId||undefined, event_name: selectedEvent?.name||undefined, status: (item?.status || 'Pending') as ShoppingItem['status'], created_at: new Date().toISOString() }
     const all = ls()
     if (item?.id) { ss(all.map(i => i.id===item.id ? {...i,...payload} : i)) } else { ss([{...payload,id:crypto.randomUUID()},...all]) }
     setSaving(false); onSaved()
@@ -76,6 +77,10 @@ function ShoppingForm({ item, onClose, onSaved }: { item?: ShoppingItem | null; 
         <div className="space-y-1.5">
           <Label>Store / Where to buy</Label>
           <Input value={store} onChange={e => setStore(e.target.value)} placeholder="e.g. Silk India, Chandni Chowk" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Planned shopping date 📅</Label>
+          <Input type="date" value={plannedDate} onChange={e => setPlannedDate(e.target.value)} />
         </div>
       </DialogBody>
       <DialogFooter>
