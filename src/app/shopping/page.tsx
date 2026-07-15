@@ -11,8 +11,11 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SHOPPING_CATEGORIES, EVENTS } from '@/lib/constants'
 import { formatCurrency } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 import type { ShoppingItem } from '@/types'
+
+const SK = 'wedding_shopping'
+function ls(): ShoppingItem[] { try { return JSON.parse(localStorage.getItem(SK)||'[]') } catch { return [] } }
+function ss(d: ShoppingItem[]) { localStorage.setItem(SK, JSON.stringify(d)) }
 
 function ShoppingForm({ item, onClose, onSaved }: { item?: ShoppingItem | null; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState(item?.name || '')
@@ -23,25 +26,14 @@ function ShoppingForm({ item, onClose, onSaved }: { item?: ShoppingItem | null; 
   const [eventId, setEventId] = useState(item?.event_id || '')
   const [saving, setSaving] = useState(false)
 
-  async function save() {
+  function save() {
     if (!name.trim()) return
     setSaving(true)
-    try {
-      const supabase = createClient()
-      const selectedEvent = EVENTS.find(e => e.id === eventId)
-      const payload = {
-        name: name.trim(), category: category || null, quantity: parseInt(quantity) || 1,
-        budget_amount: budget ? parseFloat(budget) : null, store: store || null,
-        event_id: eventId || null, event_name: selectedEvent?.name || null,
-        status: item?.status || 'Pending',
-      }
-      if (item?.id) {
-        await supabase.from('shopping_items').update(payload).eq('id', item.id)
-      } else {
-        await supabase.from('shopping_items').insert(payload)
-      }
-      onSaved()
-    } finally { setSaving(false) }
+    const selectedEvent = EVENTS.find(e => e.id === eventId)
+    const payload = { name: name.trim(), category: category||undefined, quantity: parseInt(quantity)||1, budget_amount: budget ? parseFloat(budget) : undefined, store: store||undefined, event_id: eventId||undefined, event_name: selectedEvent?.name||undefined, status: (item?.status || 'Pending') as ShoppingItem['status'], created_at: new Date().toISOString() }
+    const all = ls()
+    if (item?.id) { ss(all.map(i => i.id===item.id ? {...i,...payload} : i)) } else { ss([{...payload,id:crypto.randomUUID()},...all]) }
+    setSaving(false); onSaved()
   }
 
   return (
@@ -103,25 +95,9 @@ export default function ShoppingPage() {
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState<ShoppingItem | null>(null)
 
-  async function load() {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase.from('shopping_items').select('*').order('created_at', { ascending: false })
-      setItems(data || [])
-    } finally { setLoading(false) }
-  }
-
-  async function toggleStatus(item: ShoppingItem) {
-    const supabase = createClient()
-    await supabase.from('shopping_items').update({ status: item.status === 'Purchased' ? 'Pending' : 'Purchased' }).eq('id', item.id)
-    load()
-  }
-
-  async function deleteItem(id: string) {
-    const supabase = createClient()
-    await supabase.from('shopping_items').delete().eq('id', id)
-    load()
-  }
+  function load() { setItems(ls()); setLoading(false) }
+  function toggleStatus(item: ShoppingItem) { ss(ls().map(i => i.id===item.id ? {...i,status:(item.status==='Purchased'?'Pending':'Purchased') as ShoppingItem['status']} : i)); load() }
+  function deleteItem(id: string) { ss(ls().filter(i => i.id!==id)); load() }
 
   useEffect(() => { load() }, [])
 
@@ -130,7 +106,7 @@ export default function ShoppingPage() {
   const byCategory = SHOPPING_CATEGORIES.filter(cat => items.some(i => i.category === cat))
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header />

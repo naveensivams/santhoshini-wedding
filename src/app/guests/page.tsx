@@ -11,8 +11,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { GUEST_GROUPS } from '@/lib/constants'
-import { createClient } from '@/lib/supabase/client'
 import type { Guest } from '@/types'
+
+const SK = 'wedding_guests'
+function ls(): Guest[] { try { return JSON.parse(localStorage.getItem(SK)||'[]') } catch { return [] } }
+function ss(d: Guest[]) { localStorage.setItem(SK, JSON.stringify(d)) }
 
 const SIDES = ['Bride', 'Groom', 'Both'] as const
 const RSVP = ['Pending', 'Confirmed', 'Declined'] as const
@@ -28,19 +31,13 @@ function GuestForm({ guest, onClose, onSaved }: { guest?: Guest | null; onClose:
   const [inviteSent, setInviteSent] = useState(guest?.invitation_sent || false)
   const [saving, setSaving] = useState(false)
 
-  async function save() {
+  function save() {
     if (!name.trim()) return
     setSaving(true)
-    try {
-      const supabase = createClient()
-      const payload = { name: name.trim(), phone: phone || null, email: email || null, side, group, rsvp_status: rsvp, food_preference: food || null, invitation_sent: inviteSent }
-      if (guest?.id) {
-        await supabase.from('guests').update(payload).eq('id', guest.id)
-      } else {
-        await supabase.from('guests').insert(payload)
-      }
-      onSaved()
-    } finally { setSaving(false) }
+    const payload = { name: name.trim(), phone: phone||undefined, email: email||undefined, side: side as Guest['side'], group, rsvp_status: rsvp as Guest['rsvp_status'], food_preference: food||undefined, invitation_sent: inviteSent, created_at: new Date().toISOString() }
+    const all = ls()
+    if (guest?.id) { ss(all.map(g => g.id===guest.id ? {...g,...payload} : g)) } else { ss([{...payload,id:crypto.randomUUID()},...all]) }
+    setSaving(false); onSaved()
   }
 
   return (
@@ -113,19 +110,8 @@ export default function GuestsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editGuest, setEditGuest] = useState<Guest | null>(null)
 
-  async function load() {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase.from('guests').select('*').order('name')
-      setGuests(data || [])
-    } finally { setLoading(false) }
-  }
-
-  async function deleteGuest(id: string) {
-    const supabase = createClient()
-    await supabase.from('guests').delete().eq('id', id)
-    load()
-  }
+  function load() { setGuests(ls()); setLoading(false) }
+  function deleteGuest(id: string) { ss(ls().filter(g => g.id!==id)); load() }
 
   useEffect(() => { load() }, [])
 
@@ -141,7 +127,7 @@ export default function GuestsPage() {
   const declined = guests.filter(g => g.rsvp_status === 'Declined').length
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header />

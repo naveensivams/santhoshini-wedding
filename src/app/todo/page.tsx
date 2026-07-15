@@ -6,9 +6,11 @@ import Header from '@/components/layout/Header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
-import { createClient } from '@/lib/supabase/client'
-
 interface TodoItem { id: string; text: string; done: boolean; created_at: string }
+
+const SK = 'wedding_todos'
+function ls(): TodoItem[] { try { return JSON.parse(localStorage.getItem(SK)||'[]') } catch { return [] } }
+function ss(d: TodoItem[]) { localStorage.setItem(SK, JSON.stringify(d)) }
 
 export default function TodoPage() {
   const [todos, setTodos] = useState<TodoItem[]>([])
@@ -16,41 +18,20 @@ export default function TodoPage() {
   const [newText, setNewText] = useState('')
   const [adding, setAdding] = useState(false)
 
-  async function load() {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase.from('todo_items').select('*').order('created_at', { ascending: false })
-      setTodos(data || [])
-    } finally { setLoading(false) }
-  }
-
-  async function add() {
+  function load() { setTodos(ls()); setLoading(false) }
+  function add() {
     if (!newText.trim()) return
     setAdding(true)
-    try {
-      const supabase = createClient()
-      await supabase.from('todo_items').insert({ text: newText.trim(), done: false })
-      setNewText('')
-      load()
-    } finally { setAdding(false) }
+    ss([{id:crypto.randomUUID(),text:newText.trim(),done:false,created_at:new Date().toISOString()},...ls()])
+    setNewText(''); load(); setAdding(false)
   }
-
-  async function toggle(todo: TodoItem) {
-    const supabase = createClient()
-    await supabase.from('todo_items').update({ done: !todo.done }).eq('id', todo.id)
-    load()
-  }
-
-  async function remove(id: string) {
-    const supabase = createClient()
-    await supabase.from('todo_items').delete().eq('id', id)
-    load()
-  }
+  function toggle(todo: TodoItem) { ss(ls().map(t => t.id===todo.id ? {...t,done:!t.done} : t)); load() }
+  function remove(id: string) { ss(ls().filter(t => t.id!==id)); load() }
 
   useEffect(() => { load() }, [])
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header />

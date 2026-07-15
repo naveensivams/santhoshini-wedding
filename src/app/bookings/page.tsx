@@ -14,8 +14,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { BOOKING_CATEGORIES, BOOKING_STATUSES, EVENTS, WEDDING_DATE } from '@/lib/constants'
 import { getBookingUrgency, getStatusColor, formatCurrency, formatDate, getDaysUntil } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 import type { Booking } from '@/types'
+
+const SK = 'wedding_bookings'
+function ls(): Booking[] { try { return JSON.parse(localStorage.getItem(SK)||'[]') } catch { return [] } }
+function ss(d: Booking[]) { localStorage.setItem(SK, JSON.stringify(d)) }
 
 const daysLeft = Math.max(0, Math.ceil((WEDDING_DATE.getTime() - Date.now()) / 86400000))
 
@@ -114,28 +117,14 @@ function BookingForm({ booking, onClose, onSaved }: { booking?: Booking | null; 
   const [notes, setNotes] = useState(booking?.notes || '')
   const [saving, setSaving] = useState(false)
 
-  async function save() {
+  function save() {
     if (!category) return
     setSaving(true)
-    try {
-      const supabase = createClient()
-      const selectedEvent = EVENTS.find(e => e.id === eventId)
-      const payload = {
-        category, vendor_name: vendorName || null, status,
-        event_id: eventId || null, event_name: selectedEvent?.name || null,
-        advance_paid: parseFloat(advance) || 0, balance_due: parseFloat(balance) || 0,
-        contact_name: contactName || null, contact_phone: contactPhone || null,
-        notes: notes || null, contract_signed: false, trial_scheduled: false,
-      }
-      if (booking?.id) {
-        await supabase.from('bookings').update(payload).eq('id', booking.id)
-      } else {
-        await supabase.from('bookings').insert(payload)
-      }
-      onSaved()
-    } finally {
-      setSaving(false)
-    }
+    const selectedEvent = EVENTS.find(e => e.id === eventId)
+    const payload = { category, vendor_name: vendorName||undefined, status, event_id: eventId||undefined, event_name: selectedEvent?.name||undefined, advance_paid: parseFloat(advance)||0, balance_due: parseFloat(balance)||0, contact_name: contactName||undefined, contact_phone: contactPhone||undefined, notes: notes||undefined, contract_signed: false, trial_scheduled: false, created_at: new Date().toISOString() }
+    const all = ls()
+    if (booking?.id) { ss(all.map(b => b.id===booking.id ? {...b,...payload} as Booking : b)) } else { ss([{...payload,id:crypto.randomUUID()} as Booking,...all]) }
+    setSaving(false); onSaved()
   }
 
   return (
@@ -222,27 +211,9 @@ export default function BookingsPage() {
     return u === 'Critical' || u === 'Overdue'
   }).length
 
-  async function load() {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase.from('bookings').select('*').order('created_at', { ascending: false })
-      setBookings(data || [])
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function markStatus(id: string, status: string) {
-    const supabase = createClient()
-    await supabase.from('bookings').update({ status }).eq('id', id)
-    load()
-  }
-
-  async function deleteBooking(id: string) {
-    const supabase = createClient()
-    await supabase.from('bookings').delete().eq('id', id)
-    load()
-  }
+  function load() { setBookings(ls()); setLoading(false) }
+  function markStatus(id: string, status: string) { ss(ls().map(b => b.id===id ? {...b,status} as Booking : b)); load() }
+  function deleteBooking(id: string) { ss(ls().filter(b => b.id!==id)); load() }
 
   useEffect(() => { load() }, [])
 
@@ -252,7 +223,7 @@ export default function BookingsPage() {
   })
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header />

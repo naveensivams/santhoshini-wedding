@@ -12,8 +12,11 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { EVENTS } from '@/lib/constants'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 import type { BudgetEntry } from '@/types'
+
+const SK = 'wedding_budget'
+function ls(): BudgetEntry[] { try { return JSON.parse(localStorage.getItem(SK)||'[]') } catch { return [] } }
+function ss(d: BudgetEntry[]) { localStorage.setItem(SK, JSON.stringify(d)) }
 
 const TYPES = ['Budget', 'Expense', 'Advance', 'Payment'] as const
 const COLORS = ['#059669', '#D4AF37', '#f59e0b', '#7c3aed', '#ef4444', '#3b82f6']
@@ -28,20 +31,14 @@ function BudgetForm({ entry, onClose, onSaved }: { entry?: BudgetEntry | null; o
   const [vendorName, setVendorName] = useState(entry?.vendor_name || '')
   const [saving, setSaving] = useState(false)
 
-  async function save() {
+  function save() {
     if (!description || !amount) return
     setSaving(true)
-    try {
-      const supabase = createClient()
-      const selectedEvent = EVENTS.find(e => e.id === eventId)
-      const payload = { description, amount: parseFloat(amount), type, event_id: eventId || null, event_name: selectedEvent?.name || null, category: category || null, date, vendor_name: vendorName || null }
-      if (entry?.id) {
-        await supabase.from('budget_entries').update(payload).eq('id', entry.id)
-      } else {
-        await supabase.from('budget_entries').insert(payload)
-      }
-      onSaved()
-    } finally { setSaving(false) }
+    const selectedEvent = EVENTS.find(e => e.id === eventId)
+    const payload = { description, amount: parseFloat(amount), type: type as BudgetEntry['type'], event_id: eventId||undefined, event_name: selectedEvent?.name||undefined, category: category||undefined, date, vendor_name: vendorName||undefined, created_at: new Date().toISOString() }
+    const all = ls()
+    if (entry?.id) { ss(all.map(e => e.id===entry.id ? {...e,...payload} : e)) } else { ss([{...payload,id:crypto.randomUUID()},...all]) }
+    setSaving(false); onSaved()
   }
 
   return (
@@ -103,19 +100,8 @@ export default function BudgetPage() {
   const [showForm, setShowForm] = useState(false)
   const [editEntry, setEditEntry] = useState<BudgetEntry | null>(null)
 
-  async function load() {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase.from('budget_entries').select('*').order('date', { ascending: false })
-      setEntries(data || [])
-    } finally { setLoading(false) }
-  }
-
-  async function deleteEntry(id: string) {
-    const supabase = createClient()
-    await supabase.from('budget_entries').delete().eq('id', id)
-    load()
-  }
+  function load() { setEntries(ls()); setLoading(false) }
+  function deleteEntry(id: string) { ss(ls().filter(e => e.id!==id)); load() }
 
   useEffect(() => { load() }, [])
 
@@ -138,7 +124,7 @@ export default function BudgetPage() {
   ).map(([name, value]) => ({ name, value }))
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header />

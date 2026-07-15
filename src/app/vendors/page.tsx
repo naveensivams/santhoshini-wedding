@@ -11,8 +11,11 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { VENDOR_CATEGORIES } from '@/lib/constants'
-import { createClient } from '@/lib/supabase/client'
 import type { Vendor } from '@/types'
+
+const SK = 'wedding_vendors'
+function ls(): Vendor[] { try { return JSON.parse(localStorage.getItem(SK)||'[]') } catch { return [] } }
+function ss(d: Vendor[]) { localStorage.setItem(SK, JSON.stringify(d)) }
 
 function VendorForm({ vendor, onClose, onSaved }: { vendor?: Vendor | null; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState(vendor?.name || '')
@@ -23,19 +26,13 @@ function VendorForm({ vendor, onClose, onSaved }: { vendor?: Vendor | null; onCl
   const [notes, setNotes] = useState(vendor?.notes || '')
   const [saving, setSaving] = useState(false)
 
-  async function save() {
+  function save() {
     if (!name.trim() || !category) return
     setSaving(true)
-    try {
-      const supabase = createClient()
-      const payload = { name: name.trim(), phone: phone || null, email: email || null, category, rating: rating ? parseInt(rating) : null, notes: notes || null }
-      if (vendor?.id) {
-        await supabase.from('vendors').update(payload).eq('id', vendor.id)
-      } else {
-        await supabase.from('vendors').insert(payload)
-      }
-      onSaved()
-    } finally { setSaving(false) }
+    const payload = { name: name.trim(), phone: phone||undefined, email: email||undefined, category, rating: rating ? parseInt(rating) : undefined, notes: notes||undefined, created_at: new Date().toISOString() }
+    const all = ls()
+    if (vendor?.id) { ss(all.map(v => v.id===vendor.id ? {...v,...payload} : v)) } else { ss([{...payload,id:crypto.randomUUID()},...all]) }
+    setSaving(false); onSaved()
   }
 
   return (
@@ -89,26 +86,15 @@ export default function VendorsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editVendor, setEditVendor] = useState<Vendor | null>(null)
 
-  async function load() {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase.from('vendors').select('*').order('name')
-      setVendors(data || [])
-    } finally { setLoading(false) }
-  }
-
-  async function deleteVendor(id: string) {
-    const supabase = createClient()
-    await supabase.from('vendors').delete().eq('id', id)
-    load()
-  }
+  function load() { setVendors(ls()); setLoading(false) }
+  function deleteVendor(id: string) { ss(ls().filter(v => v.id!==id)); load() }
 
   useEffect(() => { load() }, [])
 
   const byCategory = VENDOR_CATEGORIES.filter(cat => vendors.some(v => v.category === cat))
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header />
