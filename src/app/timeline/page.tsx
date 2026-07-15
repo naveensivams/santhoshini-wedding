@@ -1,18 +1,21 @@
 'use client'
+import { useState, useEffect } from 'react'
 import Sidebar from '@/components/layout/Sidebar'
 import Header from '@/components/layout/Header'
 import { Clock, MapPin, ShoppingBag } from 'lucide-react'
 import { EVENTS } from '@/lib/constants'
 import { formatDate } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 interface ShoppingItem { id: string; name: string; store?: string; budget_amount?: number; status: string; event_id?: string; category?: string }
 
-function getShoppingItems(): ShoppingItem[] {
-  try { return JSON.parse(localStorage.getItem('wedding_shopping') || '[]') } catch { return [] }
-}
-
 export default function TimelinePage() {
-  const shopping = getShoppingItems().filter(s => s.event_id)
+  const [shopping, setShopping] = useState<ShoppingItem[]>([])
+
+  useEffect(() => {
+    createClient().from('shopping_items').select('id,name,store,budget_amount,status,event_id,category').not('event_id','is',null)
+      .then(({ data }) => setShopping(data || []))
+  }, [])
 
   const eventEntries = EVENTS.map((event, i) => {
     const items = shopping.filter(s => s.event_id === event.id)
