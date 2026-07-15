@@ -16,8 +16,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { EVENTS, TASK_PRIORITIES, TASK_STATUSES, TASK_CATEGORIES } from '@/lib/constants'
 import { formatDate, getStatusColor, getPriorityColor } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 import type { Task } from '@/types'
+
+const STORAGE_KEY = 'wedding_tasks'
+function allTasks(): Task[] { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] } }
+function saveTasks(t: Task[]) { localStorage.setItem(STORAGE_KEY, JSON.stringify(t)) }
 
 const STATUS_COLS = ['Not Started', 'In Progress', 'Waiting', 'Blocked', 'Completed']
 
@@ -79,21 +82,18 @@ function TaskForm({ event, task, onClose, onSaved }: { event: typeof EVENTS[0]; 
   const [dueDate, setDueDate] = useState(task?.due_date || '')
   const [saving, setSaving] = useState(false)
 
-  async function save() {
+  function save() {
     if (!title.trim()) return
     setSaving(true)
-    try {
-      const supabase = createClient()
-      const payload = { title: title.trim(), description, category, priority, status, due_date: dueDate || null, event_id: event.id, completion_percent: status === 'Completed' ? 100 : 0 }
-      if (task?.id) {
-        await supabase.from('tasks').update(payload).eq('id', task.id)
-      } else {
-        await supabase.from('tasks').insert(payload)
-      }
-      onSaved()
-    } finally {
-      setSaving(false)
+    const all = allTasks()
+    const payload = { title: title.trim(), description, category, priority, status, due_date: dueDate || undefined, event_id: event.id, completion_percent: status === 'Completed' ? 100 : 0, created_at: new Date().toISOString() }
+    if (task?.id) {
+      saveTasks(all.map(t => t.id === task.id ? { ...t, ...payload } as Task : t))
+    } else {
+      saveTasks([{ ...payload, id: crypto.randomUUID() } as Task, ...all])
     }
+    setSaving(false)
+    onSaved()
   }
 
   return (
@@ -165,19 +165,13 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
   const completed = tasks.filter(t => t.status === 'Completed').length
   const pct = tasks.length ? Math.round((completed / tasks.length) * 100) : 0
 
-  async function loadTasks() {
-    try {
-      const supabase = createClient()
-      const { data } = await supabase.from('tasks').select('*').eq('event_id', event!.id).order('created_at', { ascending: false })
-      setTasks(data || [])
-    } finally {
-      setLoading(false)
-    }
+  function loadTasks() {
+    setTasks(allTasks().filter(t => t.event_id === event!.id))
+    setLoading(false)
   }
 
-  async function deleteTask(id: string) {
-    const supabase = createClient()
-    await supabase.from('tasks').delete().eq('id', id)
+  function deleteTask(id: string) {
+    saveTasks(allTasks().filter(t => t.id !== id))
     loadTasks()
   }
 
