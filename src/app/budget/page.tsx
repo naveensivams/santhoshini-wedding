@@ -34,8 +34,12 @@ function BudgetForm({ entry, onClose, onSaved }: { entry?: BudgetEntry | null; o
     const selectedEvent = EVENTS.find(e => e.id === eventId)
     const payload = { description, amount: parseFloat(amount), type: type as BudgetEntry['type'], event_id: eventId||null, event_name: selectedEvent?.name||null, category: category||null, date, vendor_name: vendorName||null }
     const sb = createClient()
-    if (entry?.id) { await sb.from('budget_entries').update(payload).eq('id', entry.id) } else { await sb.from('budget_entries').insert({ ...payload, id: crypto.randomUUID() }) }
-    setSaving(false); onSaved()
+    const { error } = entry?.id
+      ? await sb.from('budget_entries').update(payload).eq('id', entry.id)
+      : await sb.from('budget_entries').insert({ ...payload, id: crypto.randomUUID() })
+    setSaving(false)
+    if (error) { console.error('Save budget entry:', error.message, error.code); return }
+    onSaved()
   }
 
   return (
@@ -119,7 +123,10 @@ export default function BudgetPage() {
   }
   async function saveTotalBudget() {
     const val = parseFloat(totalBudgetInput) || 0
-    try { await createClient().from('settings').upsert({ key: 'total_budget', value: String(val) }) } catch (e) { console.error('Save budget:', e) }
+    const { error } = await createClient()
+      .from('settings')
+      .upsert({ key: 'total_budget', value: String(val) }, { onConflict: 'key' })
+    if (error) { console.error('Save total budget:', error.message, error.code); return }
     setSavedTotal(val)
   }
 

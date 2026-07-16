@@ -30,8 +30,12 @@ function ShoppingForm({ item, onClose, onSaved }: { item?: ShoppingItem | null; 
     const selectedEvent = EVENTS.find(e => e.id === eventId)
     const payload = { name: name.trim(), category: category||null, quantity: parseInt(quantity)||1, budget_amount: budget ? parseFloat(budget) : null, store: store||null, planned_date: plannedDate||null, event_id: eventId||null, event_name: selectedEvent?.name||null, status: (item?.status || 'Pending') as ShoppingItem['status'] }
     const sb = createClient()
-    if (item?.id) { await sb.from('shopping_items').update(payload).eq('id', item.id) } else { await sb.from('shopping_items').insert({ ...payload, id: crypto.randomUUID() }) }
-    setSaving(false); onSaved()
+    const { error } = item?.id
+      ? await sb.from('shopping_items').update(payload).eq('id', item.id)
+      : await sb.from('shopping_items').insert({ ...payload, id: crypto.randomUUID() })
+    setSaving(false)
+    if (error) { console.error('Save shopping:', error.message, error.code); return }
+    onSaved()
   }
 
   return (

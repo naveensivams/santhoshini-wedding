@@ -1,13 +1,22 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Search, Bell, Sun, Moon, Menu } from 'lucide-react'
+import { Search, Bell, Sun, Moon, Menu, LogOut } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { useSidebar } from './SidebarContext'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 export default function Header() {
   const [query, setQuery] = useState('')
   const [dark, setDark] = useState(false)
   const { toggle } = useSidebar()
+  const router = useRouter()
+
+  async function logout() {
+    await createClient().auth.signOut()
+    router.push('/auth/login')
+    router.refresh()
+  }
 
   useEffect(() => {
     const saved = localStorage.getItem('theme')
@@ -55,6 +64,13 @@ export default function Header() {
         <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-white text-xs font-semibold">
           N
         </div>
+        <button
+          onClick={logout}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+          title="Sign out"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+        </button>
       </div>
     </header>
   )

@@ -84,14 +84,11 @@ function TaskForm({ event, task, onClose, onSaved }: { event: typeof EVENTS[0]; 
     setSaving(true)
     const payload = { title: title.trim(), description: description||null, category: category||null, priority, status, due_date: dueDate||null, event_id: event.id, completion_percent: status === 'Completed' ? 100 : 0 }
     const sb = createClient()
-    try {
-      if (task?.id) {
-        await sb.from('tasks').update(payload).eq('id', task.id)
-      } else {
-        await sb.from('tasks').insert({ ...payload, id: crypto.randomUUID() })
-      }
-    } catch (e) { console.error('Save task error', e) }
+    const { error } = task?.id
+      ? await sb.from('tasks').update(payload).eq('id', task.id)
+      : await sb.from('tasks').insert({ ...payload, id: crypto.randomUUID() })
     setSaving(false)
+    if (error) { console.error('Save task:', error.message, error.code); return }
     onSaved()
   }
 

@@ -120,8 +120,12 @@ function BookingForm({ booking, onClose, onSaved }: { booking?: Booking | null; 
     const selectedEvent = EVENTS.find(e => e.id === eventId)
     const payload = { category, vendor_name: vendorName||null, status, event_id: eventId||null, event_name: selectedEvent?.name||null, advance_paid: parseFloat(advance)||0, balance_due: parseFloat(balance)||0, contact_name: contactName||null, contact_phone: contactPhone||null, notes: notes||null, contract_signed: false, trial_scheduled: false }
     const sb = createClient()
-    if (booking?.id) { await sb.from('bookings').update(payload).eq('id', booking.id) } else { await sb.from('bookings').insert({ ...payload, id: crypto.randomUUID() }) }
-    setSaving(false); onSaved()
+    const { error } = booking?.id
+      ? await sb.from('bookings').update(payload).eq('id', booking.id)
+      : await sb.from('bookings').insert({ ...payload, id: crypto.randomUUID() })
+    setSaving(false)
+    if (error) { console.error('Save booking:', error.message, error.code); return }
+    onSaved()
   }
 
   return (

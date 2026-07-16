@@ -28,8 +28,12 @@ function VendorForm({ vendor, onClose, onSaved }: { vendor?: Vendor | null; onCl
     setSaving(true)
     const payload = { name: name.trim(), phone: phone||null, email: email||null, category, rating: rating ? parseInt(rating) : null, notes: notes||null }
     const sb = createClient()
-    if (vendor?.id) { await sb.from('vendors').update(payload).eq('id', vendor.id) } else { await sb.from('vendors').insert({ ...payload, id: crypto.randomUUID() }) }
-    setSaving(false); onSaved()
+    const { error } = vendor?.id
+      ? await sb.from('vendors').update(payload).eq('id', vendor.id)
+      : await sb.from('vendors').insert({ ...payload, id: crypto.randomUUID() })
+    setSaving(false)
+    if (error) { console.error('Save vendor:', error.message, error.code); return }
+    onSaved()
   }
 
   return (

@@ -28,14 +28,13 @@ function TaskForm({ task, onClose, onSaved }: { task?: Task | null; onClose: () 
   async function save() {
     if (!title.trim()) return
     setSaving(true)
-    const supabase = createClient()
+    const sb = createClient()
     const payload = { title: title.trim(), description: description||null, category: category||null, priority, status, due_date: dueDate||null, event_id: eventId||null, completion_percent: status === 'Completed' ? 100 : 0 }
-    if (task?.id) {
-      await supabase.from('tasks').update(payload).eq('id', task.id)
-    } else {
-      await supabase.from('tasks').insert({ ...payload, id: crypto.randomUUID() })
-    }
+    const { error } = task?.id
+      ? await sb.from('tasks').update(payload).eq('id', task.id)
+      : await sb.from('tasks').insert({ ...payload, id: crypto.randomUUID() })
     setSaving(false)
+    if (error) { console.error('Save task:', error.message, error.code); return }
     onSaved()
   }
 

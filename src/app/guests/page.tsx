@@ -33,8 +33,12 @@ function GuestForm({ guest, onClose, onSaved }: { guest?: Guest | null; onClose:
     setSaving(true)
     const payload = { name: name.trim(), phone: phone||null, email: email||null, side: side as Guest['side'], group, rsvp_status: rsvp as Guest['rsvp_status'], food_preference: food||null, invitation_sent: inviteSent }
     const sb = createClient()
-    if (guest?.id) { await sb.from('guests').update(payload).eq('id', guest.id) } else { await sb.from('guests').insert({ ...payload, id: crypto.randomUUID() }) }
-    setSaving(false); onSaved()
+    const { error } = guest?.id
+      ? await sb.from('guests').update(payload).eq('id', guest.id)
+      : await sb.from('guests').insert({ ...payload, id: crypto.randomUUID() })
+    setSaving(false)
+    if (error) { console.error('Save guest:', error.message, error.code); return }
+    onSaved()
   }
 
   return (
