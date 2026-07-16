@@ -116,7 +116,7 @@ export default function DashboardPage() {
         <div className="relative flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
             <p className="text-emerald-300 text-sm mb-1">{getGreeting()}, {ADMIN_NAME} 🌙</p>
-            <h1 className="font-display text-3xl font-bold text-white leading-tight mb-1">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-white leading-tight mb-1">
               SANTHOSHINI&apos;S WEDDING
             </h1>
             <p className="text-amber-300 text-sm font-medium tracking-wide mb-4">
@@ -149,7 +149,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <ProgressRing days={countdown.days} />
+          <div className="hidden sm:block"><ProgressRing days={countdown.days} /></div>
         </div>
       </motion.div>
 

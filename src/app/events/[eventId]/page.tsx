@@ -26,7 +26,7 @@ function TaskCard({ task, onEdit, onDelete }: { task: Task; onEdit: () => void; 
     <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm hover:shadow-md transition-shadow group">
       <div className="flex items-start justify-between gap-2 mb-2">
         <p className="text-sm font-medium text-gray-900 leading-tight">{task.title}</p>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
           <button onClick={onEdit} className="p-1 text-gray-400 hover:text-gray-600 rounded"><Edit2 className="w-3 h-3" /></button>
           <button onClick={onDelete} className="p-1 text-gray-400 hover:text-red-500 rounded"><Trash2 className="w-3 h-3" /></button>
         </div>
