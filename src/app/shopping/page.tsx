@@ -98,13 +98,20 @@ export default function ShoppingPage() {
   const [editItem, setEditItem] = useState<ShoppingItem | null>(null)
 
   async function load() {
-    const { data } = await createClient().from('shopping_items').select('*').order('created_at', { ascending: false })
-    setItems((data || []) as ShoppingItem[]); setLoading(false)
+    try {
+      const { data } = await createClient().from('shopping_items').select('*').order('created_at', { ascending: false })
+      setItems((data || []) as ShoppingItem[])
+    } catch (e) { console.error('Load shopping:', e) }
+    setLoading(false)
   }
   async function toggleStatus(item: ShoppingItem) {
-    await createClient().from('shopping_items').update({ status: item.status==='Purchased'?'Pending':'Purchased' }).eq('id', item.id); load()
+    try { await createClient().from('shopping_items').update({ status: item.status==='Purchased'?'Pending':'Purchased' }).eq('id', item.id) } catch (e) { console.error(e) }
+    load()
   }
-  async function deleteItem(id: string) { await createClient().from('shopping_items').delete().eq('id', id); load() }
+  async function deleteItem(id: string) {
+    try { await createClient().from('shopping_items').delete().eq('id', id) } catch (e) { console.error(e) }
+    load()
+  }
 
   useEffect(() => {
     load()

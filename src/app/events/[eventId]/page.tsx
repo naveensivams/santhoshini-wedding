@@ -17,10 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { EVENTS, TASK_PRIORITIES, TASK_STATUSES, TASK_CATEGORIES } from '@/lib/constants'
 import { formatDate, getStatusColor, getPriorityColor } from '@/lib/utils'
 import type { Task } from '@/types'
-
-const STORAGE_KEY = 'wedding_tasks'
-function allTasks(): Task[] { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') } catch { return [] } }
-function saveTasks(t: Task[]) { localStorage.setItem(STORAGE_KEY, JSON.stringify(t)) }
+import { createClient } from '@/lib/supabase/client'
 
 const STATUS_COLS = ['Not Started', 'In Progress', 'Waiting', 'Blocked', 'Completed']
 
@@ -82,16 +79,18 @@ function TaskForm({ event, task, onClose, onSaved }: { event: typeof EVENTS[0]; 
   const [dueDate, setDueDate] = useState(task?.due_date || '')
   const [saving, setSaving] = useState(false)
 
-  function save() {
+  async function save() {
     if (!title.trim()) return
     setSaving(true)
-    const all = allTasks()
-    const payload = { title: title.trim(), description, category, priority, status, due_date: dueDate || undefined, event_id: event.id, completion_percent: status === 'Completed' ? 100 : 0, created_at: new Date().toISOString() }
-    if (task?.id) {
-      saveTasks(all.map(t => t.id === task.id ? { ...t, ...payload } as Task : t))
-    } else {
-      saveTasks([{ ...payload, id: crypto.randomUUID() } as Task, ...all])
-    }
+    const payload = { title: title.trim(), description: description||null, category: category||null, priority, status, due_date: dueDate||null, event_id: event.id, completion_percent: status === 'Completed' ? 100 : 0 }
+    const sb = createClient()
+    try {
+      if (task?.id) {
+        await sb.from('tasks').update(payload).eq('id', task.id)
+      } else {
+        await sb.from('tasks').insert({ ...payload, id: crypto.randomUUID() })
+      }
+    } catch (e) { console.error('Save task error', e) }
     setSaving(false)
     onSaved()
   }
@@ -165,17 +164,25 @@ export default function EventPage({ params }: { params: Promise<{ eventId: strin
   const completed = tasks.filter(t => t.status === 'Completed').length
   const pct = tasks.length ? Math.round((completed / tasks.length) * 100) : 0
 
-  function loadTasks() {
-    setTasks(allTasks().filter(t => t.event_id === event!.id))
+  async function loadTasks() {
+    try {
+      const { data } = await createClient().from('tasks').select('*').eq('event_id', event!.id).order('created_at', { ascending: false })
+      setTasks((data || []) as Task[])
+    } catch (e) { console.error('Load tasks error', e) }
     setLoading(false)
   }
 
-  function deleteTask(id: string) {
-    saveTasks(allTasks().filter(t => t.id !== id))
+  async function deleteTask(id: string) {
+    try { await createClient().from('tasks').delete().eq('id', id) } catch (e) { console.error(e) }
     loadTasks()
   }
 
-  useEffect(() => { loadTasks() }, [eventId])
+  useEffect(() => {
+    loadTasks()
+    const sb = createClient()
+    const sub = sb.channel(`event-tasks-${eventId}`).on('postgres_changes', { event: '*', schema: 'public', table: 'tasks', filter: `event_id=eq.${event!.id}` }, loadTasks).subscribe()
+    return () => { sub.unsubscribe() }
+  }, [eventId])
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950">

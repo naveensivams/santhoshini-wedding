@@ -209,11 +209,20 @@ export default function BookingsPage() {
   }).length
 
   async function load() {
-    const { data } = await createClient().from('bookings').select('*').order('created_at', { ascending: false })
-    setBookings((data || []) as Booking[]); setLoading(false)
+    try {
+      const { data } = await createClient().from('bookings').select('*').order('created_at', { ascending: false })
+      setBookings((data || []) as Booking[])
+    } catch (e) { console.error('Load bookings:', e) }
+    setLoading(false)
   }
-  async function markStatus(id: string, status: string) { await createClient().from('bookings').update({ status }).eq('id', id); load() }
-  async function deleteBooking(id: string) { await createClient().from('bookings').delete().eq('id', id); load() }
+  async function markStatus(id: string, status: string) {
+    try { await createClient().from('bookings').update({ status }).eq('id', id) } catch (e) { console.error(e) }
+    load()
+  }
+  async function deleteBooking(id: string) {
+    try { await createClient().from('bookings').delete().eq('id', id) } catch (e) { console.error(e) }
+    load()
+  }
 
   useEffect(() => {
     load()

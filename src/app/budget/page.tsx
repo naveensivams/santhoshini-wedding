@@ -100,21 +100,26 @@ export default function BudgetPage() {
   const [savedTotal, setSavedTotal] = useState(0)
 
   async function load() {
-    const sb = createClient()
-    const [{ data: entriesData }, { data: settingData }] = await Promise.all([
-      sb.from('budget_entries').select('*').order('date', { ascending: false }),
-      sb.from('settings').select('value').eq('key', 'total_budget').maybeSingle()
-    ])
-    setEntries((entriesData || []) as BudgetEntry[])
-    const saved = parseFloat(settingData?.value || '0')
-    setSavedTotal(saved)
-    setTotalBudgetInput(saved > 0 ? String(saved) : '')
+    try {
+      const sb = createClient()
+      const [{ data: entriesData }, { data: settingData }] = await Promise.all([
+        sb.from('budget_entries').select('*').order('date', { ascending: false }),
+        sb.from('settings').select('value').eq('key', 'total_budget').maybeSingle()
+      ])
+      setEntries((entriesData || []) as BudgetEntry[])
+      const saved = parseFloat((settingData as {value?:string}|null)?.value || '0')
+      setSavedTotal(saved)
+      setTotalBudgetInput(saved > 0 ? String(saved) : '')
+    } catch (e) { console.error('Load budget:', e) }
     setLoading(false)
   }
-  async function deleteEntry(id: string) { await createClient().from('budget_entries').delete().eq('id', id); load() }
+  async function deleteEntry(id: string) {
+    try { await createClient().from('budget_entries').delete().eq('id', id) } catch (e) { console.error(e) }
+    load()
+  }
   async function saveTotalBudget() {
     const val = parseFloat(totalBudgetInput) || 0
-    await createClient().from('settings').upsert({ key: 'total_budget', value: String(val) })
+    try { await createClient().from('settings').upsert({ key: 'total_budget', value: String(val) }) } catch (e) { console.error('Save budget:', e) }
     setSavedTotal(val)
   }
 

@@ -16,17 +16,26 @@ export default function TodoPage() {
   const [adding, setAdding] = useState(false)
 
   async function load() {
-    const { data } = await createClient().from('todo_items').select('*').order('created_at', { ascending: false })
-    setTodos((data || []) as TodoItem[]); setLoading(false)
+    try {
+      const { data } = await createClient().from('todo_items').select('*').order('created_at', { ascending: false })
+      setTodos((data || []) as TodoItem[])
+    } catch (e) { console.error('Load todos:', e) }
+    setLoading(false)
   }
   async function add() {
     if (!newText.trim()) return
     setAdding(true)
-    await createClient().from('todo_items').insert({ id: crypto.randomUUID(), text: newText.trim(), done: false })
+    try { await createClient().from('todo_items').insert({ id: crypto.randomUUID(), text: newText.trim(), done: false }) } catch (e) { console.error(e) }
     setNewText(''); setAdding(false); load()
   }
-  async function toggle(todo: TodoItem) { await createClient().from('todo_items').update({ done: !todo.done }).eq('id', todo.id); load() }
-  async function remove(id: string) { await createClient().from('todo_items').delete().eq('id', id); load() }
+  async function toggle(todo: TodoItem) {
+    try { await createClient().from('todo_items').update({ done: !todo.done }).eq('id', todo.id) } catch (e) { console.error(e) }
+    load()
+  }
+  async function remove(id: string) {
+    try { await createClient().from('todo_items').delete().eq('id', id) } catch (e) { console.error(e) }
+    load()
+  }
 
   useEffect(() => {
     load()

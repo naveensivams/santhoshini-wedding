@@ -173,9 +173,10 @@ ALTER TABLE shopping_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE guests         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vendors        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE todo_items     ENABLE ROW LEVEL SECURITY;
-ALTER TABLE settings       DISABLE ROW LEVEL SECURITY;
+ALTER TABLE settings       ENABLE ROW LEVEL SECURITY;
 
--- Drop old auth-only policies if they exist
+-- Drop old policies if they exist (safe to re-run)
+DROP POLICY IF EXISTS "open_all" ON settings;
 DROP POLICY IF EXISTS "auth_all" ON tasks;
 DROP POLICY IF EXISTS "auth_all" ON bookings;
 DROP POLICY IF EXISTS "auth_all" ON budget_entries;
@@ -183,6 +184,13 @@ DROP POLICY IF EXISTS "auth_all" ON shopping_items;
 DROP POLICY IF EXISTS "auth_all" ON guests;
 DROP POLICY IF EXISTS "auth_all" ON vendors;
 DROP POLICY IF EXISTS "auth_all" ON todo_items;
+DROP POLICY IF EXISTS "open_all" ON tasks;
+DROP POLICY IF EXISTS "open_all" ON bookings;
+DROP POLICY IF EXISTS "open_all" ON budget_entries;
+DROP POLICY IF EXISTS "open_all" ON shopping_items;
+DROP POLICY IF EXISTS "open_all" ON guests;
+DROP POLICY IF EXISTS "open_all" ON vendors;
+DROP POLICY IF EXISTS "open_all" ON todo_items;
 
 -- Allow anonymous (anyone with the URL) full read/write
 CREATE POLICY "open_all" ON tasks          FOR ALL TO anon USING (true) WITH CHECK (true);
@@ -192,3 +200,4 @@ CREATE POLICY "open_all" ON shopping_items FOR ALL TO anon USING (true) WITH CHE
 CREATE POLICY "open_all" ON guests         FOR ALL TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "open_all" ON vendors        FOR ALL TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "open_all" ON todo_items     FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "open_all" ON settings       FOR ALL TO anon USING (true) WITH CHECK (true);

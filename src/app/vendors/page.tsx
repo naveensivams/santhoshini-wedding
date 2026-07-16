@@ -84,10 +84,16 @@ export default function VendorsPage() {
   const [editVendor, setEditVendor] = useState<Vendor | null>(null)
 
   async function load() {
-    const { data } = await createClient().from('vendors').select('*').order('created_at', { ascending: false })
-    setVendors((data || []) as Vendor[]); setLoading(false)
+    try {
+      const { data } = await createClient().from('vendors').select('*').order('created_at', { ascending: false })
+      setVendors((data || []) as Vendor[])
+    } catch (e) { console.error('Load vendors:', e) }
+    setLoading(false)
   }
-  async function deleteVendor(id: string) { await createClient().from('vendors').delete().eq('id', id); load() }
+  async function deleteVendor(id: string) {
+    try { await createClient().from('vendors').delete().eq('id', id) } catch (e) { console.error(e) }
+    load()
+  }
 
   useEffect(() => {
     load()

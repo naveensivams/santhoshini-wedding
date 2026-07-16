@@ -108,10 +108,16 @@ export default function GuestsPage() {
   const [editGuest, setEditGuest] = useState<Guest | null>(null)
 
   async function load() {
-    const { data } = await createClient().from('guests').select('*').order('created_at', { ascending: false })
-    setGuests((data || []) as Guest[]); setLoading(false)
+    try {
+      const { data } = await createClient().from('guests').select('*').order('created_at', { ascending: false })
+      setGuests((data || []) as Guest[])
+    } catch (e) { console.error('Load guests:', e) }
+    setLoading(false)
   }
-  async function deleteGuest(id: string) { await createClient().from('guests').delete().eq('id', id); load() }
+  async function deleteGuest(id: string) {
+    try { await createClient().from('guests').delete().eq('id', id) } catch (e) { console.error(e) }
+    load()
+  }
 
   useEffect(() => {
     load()

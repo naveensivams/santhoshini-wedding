@@ -112,14 +112,15 @@ export default function TasksPage() {
   const [filterEvent, setFilterEvent] = useState('')
 
   async function load() {
-    const supabase = createClient()
-    const { data } = await supabase.from('tasks').select('*').order('created_at', { ascending: false })
-    setTasks((data || []) as Task[])
+    try {
+      const { data } = await createClient().from('tasks').select('*').order('created_at', { ascending: false })
+      setTasks((data || []) as Task[])
+    } catch (e) { console.error('Load tasks:', e) }
     setLoading(false)
   }
 
   async function deleteTask(id: string) {
-    await createClient().from('tasks').delete().eq('id', id)
+    try { await createClient().from('tasks').delete().eq('id', id) } catch (e) { console.error(e) }
     load()
   }
 
