@@ -5,7 +5,7 @@ import { Gem, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { signup } from '@/app/auth/actions'
+import { createClient } from '@/lib/supabase/client'
 
 export default function SignupPage() {
   const [name, setName] = useState('')
@@ -20,15 +20,13 @@ export default function SignupPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    try {
-      const result = await signup(email, password, name)
-      if (result?.error) { setError(result.error); return }
-      if (result?.success) setSuccess(true)
-    } catch {
-      setError('Something went wrong. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+    const { error: authError } = await createClient().auth.signUp({
+      email, password,
+      options: { data: { name } },
+    })
+    setLoading(false)
+    if (authError) { setError(authError.message); return }
+    setSuccess(true)
   }
 
   if (success) {

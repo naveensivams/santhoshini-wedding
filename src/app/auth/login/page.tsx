@@ -1,11 +1,12 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Gem, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { login } from '@/app/auth/actions'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -13,18 +14,19 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const router = useRouter()
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
-    try {
-      const result = await login(email, password)
-      if (result?.error) setError(result.error)
-    } catch {
-      setError('Something went wrong. Please try again.')
-    } finally {
+    const { error: authError } = await createClient().auth.signInWithPassword({ email, password })
+    if (authError) {
+      setError(authError.message === 'Invalid login credentials' ? 'Wrong email or password.' : authError.message)
       setLoading(false)
+    } else {
+      router.push('/dashboard')
+      router.refresh()
     }
   }
 
