@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Gem, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,18 +16,24 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const router = useRouter()
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const { error: authError } = await createClient().auth.signUp({
+    const { data, error: authError } = await createClient().auth.signUp({
       email, password,
       options: { data: { name } },
     })
     setLoading(false)
     if (authError) { setError(authError.message); return }
-    setSuccess(true)
+    if (data.session) {
+      router.push('/dashboard')
+      router.refresh()
+    } else {
+      setSuccess(true)
+    }
   }
 
   if (success) {
