@@ -4,6 +4,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  if (process.env.MAINTENANCE_MODE === 'true' && pathname !== '/maintenance') {
+    return NextResponse.redirect(new URL('/maintenance', request.url))
+  }
+
   if (pathname === '/' || pathname === '') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
